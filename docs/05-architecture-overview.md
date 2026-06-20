@@ -51,6 +51,17 @@ Application layer は次のような workflows を調整します。
 Application services は domain logic と ports を呼び出します。External service
 details を埋め込んではいけません。
 
+## Packaging strategy
+
+初期 runtime は local-first な single-process CLI と workspace から始めます。
+ただし、CLI は business logic の所有者ではありません。CLI は application
+services を呼び出す interface です。
+
+将来の web UI、server、worker、agent tool は、同じ application services、
+contracts、operation documents、policy checks を再利用できるようにします。
+初期実装で network boundary や distributed storage を導入する必要はありませんが、
+後から分離できる module boundary は守ります。
+
 ## Ports
 
 Ports は abstract capabilities を定義します。

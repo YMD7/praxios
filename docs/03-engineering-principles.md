@@ -42,6 +42,22 @@ Domain/Application -> Port -> Adapter -> External service
 
 External service models を core domain へ漏らしてはいけません。
 
+## 単体から始め、分離可能な境界を保つ
+
+Praxios は初期 version では local-first な single-process CLI と workspace
+runtime として始めてよい。これは packaging の選択であり、architecture boundary
+を潰してよいという意味ではありません。
+
+CLI handler、将来の UI route、server、worker、agent tool は business logic を
+直接所有してはいけません。これらは application service を呼び出す interface
+です。
+
+同じ domain command、contract、operation document、policy check は、現在の CLI
+からも、将来の app / server からも利用できる形にするべきです。
+
+必要になる前に network boundary、background worker、distributed storage を
+導入してはいけません。ただし、後から導入できる module boundary は維持します。
+
 ## State transition は明示する
 
 Task、Knowledge、Artifact、Review などの重要 entity は、明示的な state
