@@ -6,13 +6,16 @@ Praxios は boring な ports-and-adapters architecture を採用します。Core
 ## Layer
 
 ```text
-apps
-  -> application
-    -> domain
-    -> ports
-      -> adapters
-        -> external systems
+apps -> application -> domain
+apps -> application -> ports
+adapters -> ports
+adapters -> external systems
 ```
+
+Domain layer は ports に依存してはいけません。Application layer が domain
+logic と ports を組み合わせ、Adapters は ports を実装します。Ports は domain
+object を参照できますが、domain invariants や state transition を所有しては
+いけません。
 
 ## Domain layer
 
@@ -20,6 +23,7 @@ Domain layer は core concepts と invariants を所有します。
 
 - Source
 - Knowledge
+- TaskCandidate
 - Task
 - ContextPacket
 - Artifact
@@ -115,13 +119,13 @@ docs/
   03-engineering-principles.md
   04-security-and-privacy.md
   05-architecture-overview.md
+  code-review.md
+  sdd-project.md
+  sdd-structure.md
+  sdd-tech.md
   adr/
     0001-initial-architecture.md
-```
-
-将来の implementation layout。必要になった時点で追加します。
-
-```text
+    0002-zero-trust-for-agentic-work.md
 spec/
   README.md
   _custom/
@@ -132,14 +136,19 @@ spec/
   _archive/
     blueprints/
     specs/
+```
+
+将来の implementation layout。必要になった時点で追加します。
+
+```text
 contracts/
-  source.schema.ts
-  knowledge.schema.ts
-  task.schema.ts
-  context-packet.schema.ts
-  artifact.schema.ts
-  review.schema.ts
-  event.schema.ts
+  source.schema
+  knowledge.schema
+  task.schema
+  context-packet.schema
+  artifact.schema
+  review.schema
+  event.schema
 packages/
   core/
   application/

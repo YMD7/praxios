@@ -21,6 +21,7 @@ Praxios は、日々の業務情報を再利用可能な知識に変え、その
 - [docs/03-engineering-principles.md](docs/03-engineering-principles.md)
 - [docs/04-security-and-privacy.md](docs/04-security-and-privacy.md)
 - [docs/05-architecture-overview.md](docs/05-architecture-overview.md)
+- [docs/code-review.md](docs/code-review.md)
 - [docs/adr/0001-initial-architecture.md](docs/adr/0001-initial-architecture.md)
 - [docs/adr/0002-zero-trust-for-agentic-work.md](docs/adr/0002-zero-trust-for-agentic-work.md)
 

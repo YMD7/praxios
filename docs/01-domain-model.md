@@ -86,6 +86,45 @@ Task MUST 含む:
 Task state は direct mutation ではなく、explicit command によって変更する
 必要があります。
 
+## TaskCandidate
+
+TaskCandidate は Source、Knowledge、または user input から抽出された、未確定の
+work case 候補です。TaskCandidate は Task ではありません。Human または明示的な
+policy によって confirm されるまで、active work case として扱ってはいけません。
+
+TaskCandidate MUST 含む:
+
+- title
+- trigger
+- inferred intent
+- proposed done criteria
+- source references or explicit user-provided rationale
+- confidence
+- uncertainty
+- extraction rationale
+- created by
+- created at
+
+TaskCandidate SHOULD 含む:
+
+- related knowledge references
+- suggested priority
+- suggested owner
+- duplicate or related Task references
+- missing information
+- risk notes
+
+TaskCandidate の state transition は明示的である必要があります。
+
+- `proposed`: 抽出または作成された状態。
+- `confirmed`: Task として採用された状態。
+- `dismissed`: Task として扱わない判断がされた状態。
+- `merged`: 既存 Task または別 TaskCandidate に統合された状態。
+
+`ConfirmTask` は TaskCandidate から Task を作ります。このとき、done criteria、
+context requirements、required decisions、source references を確認する必要が
+あります。LLM が生成した TaskCandidate を、検証なしに Task へ昇格してはいけません。
+
 ## ContextPacket
 
 ContextPacket は task-specific な working memory です。Wiki は long-term
@@ -135,8 +174,12 @@ Review が必要な操作:
 - User 代理での Slack posting
 - 破壊的 update
 - contract、legal、financial、HR、hiring、personal-data-related decision
+- personal data や sensitive company data の外部共有
+- sensitive data を含む ContextPacket の external LLM provider 送信
 - 大規模な Knowledge rewrite
 - 重要な Task の final completion
+- secret や credential の変更
+- production data に影響する操作
 
 Review SHOULD 記録する:
 

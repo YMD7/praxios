@@ -64,6 +64,7 @@ audit によって制御します。
 - 破壊的 update
 - Contract、legal、financial、HR、hiring、personal-data-related decision
 - Personal data や sensitive company data の外部共有
+- Sensitive data を含む ContextPacket の external LLM provider 送信
 - 大規模な Knowledge rewrite
 - 重要な Task の final completion
 - Secret や credential の変更
