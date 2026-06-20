@@ -22,6 +22,11 @@ Praxios は、日々の業務情報を再利用可能な知識に変え、その
 - [docs/04-security-and-privacy.md](docs/04-security-and-privacy.md)
 - [docs/05-architecture-overview.md](docs/05-architecture-overview.md)
 - [docs/adr/0001-initial-architecture.md](docs/adr/0001-initial-architecture.md)
+- [docs/adr/0002-zero-trust-for-agentic-work.md](docs/adr/0002-zero-trust-for-agentic-work.md)
+
+SDD の steering 文書は `spec/_custom/steering/` から参照できます。
+これらは実装仕様ではなく、Blueprint / Requirements / Design / Tasks を作る
+ための方向づけです。
 
 ## プロダクトの目的
 

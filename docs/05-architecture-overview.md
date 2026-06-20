@@ -82,6 +82,16 @@ Agent modules は extraction、summarization、draft generation、proposal gener
 を行えます。LLM output を untrusted input として扱い、domain command を発行
 する前に validation へ通す必要があります。
 
+## Agentic trust boundary
+
+Agent modules は trusted boundary の内側に置きません。Agent が正規の tool
+access を持つ場合でも、prompt injection、tool poisoning、memory poisoning、
+stale context、over-broad permission の影響を受ける可能性があります。
+
+Application layer は、agent action を task context、permission、tool use、
+approval、event と結びつける必要があります。ContextPacket は task-specific
+に構築し、Tool access は task-scoped capability として扱います。
+
 ## Storage and publishing
 
 Portable knowledge bundles と human inspectability のために、Markdown と YAML
@@ -112,7 +122,24 @@ docs/
 将来の implementation layout。必要になった時点で追加します。
 
 ```text
-specs/
+spec/
+  README.md
+  _custom/
+    README.md
+    steering/
+  blueprints/
+  specs/
+  _archive/
+    blueprints/
+    specs/
+contracts/
+  source.schema.ts
+  knowledge.schema.ts
+  task.schema.ts
+  context-packet.schema.ts
+  artifact.schema.ts
+  review.schema.ts
+  event.schema.ts
 packages/
   core/
   application/

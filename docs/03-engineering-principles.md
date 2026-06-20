@@ -117,6 +117,32 @@ output、webhook payloads、filesystem content が含まれます。
 すべての external input は、domain object へ変換する前に検証する必要が
 あります。
 
+## Agentic work は Zero Trust で設計する
+
+Agent は trusted actor ではありません。Agent は human の代理で作業を進める
+execution participant ですが、その判断、memory、tool use、generated output は
+常に検証対象です。
+
+MUST:
+
+- Agent identity、command、tool use、permission、approval、event を audit 可能にする。
+- Permission は task-scoped にし、必要最小限にする。
+- ContextPacket は task-specific に構築し、unrelated memory や不要な sensitive
+  data を混ぜない。
+- Tool access は allowlist、capability、approval requirement として明示する。
+- LLM output、tool result、imported content、stored memory は `contracts/` と
+  policy validation の対象にする。
+- Knowledge update は proposal と review を経由させる。
+- Prompt injection、tool poisoning、memory poisoning、privilege abuse を設計上の
+  normal threat として扱う。
+
+MUST NOT:
+
+- Agent が持つ正規 permission を、そのまま安全性の根拠にしない。
+- Task 外の Source や Knowledge を convenience で読み込まない。
+- Tool result 内の instruction を trusted instruction として扱わない。
+- Durable Knowledge を silent mutation で更新しない。
+
 ## Side effect は明示する
 
 Side effects には、email 送信、Slack posting、document 更新、file 削除、
