@@ -96,10 +96,17 @@ vertical slice を対象にするべきです。
 (8) Task を complete する。
 (9) Learning / Knowledge update proposal を作る。
 
+## Reference implementations
+
+- `docs/references/mulmoclaude.md`: LLM Wiki、local workspace、lint / health
+  check、workspace-as-agent 的な設計の参照メモ。Knowledge workspace や lint を
+  設計するときに参照します。
+
 ## Source documents
 
 - `README.md`
 - `docs/00-constitution.md`
 - `docs/01-domain-model.md`
 - `docs/02-agent-contract.md`
+- `docs/references/mulmoclaude.md`
 - `docs/adr/0001-initial-architecture.md`

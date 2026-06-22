@@ -22,12 +22,19 @@ Praxios は、日々の業務情報を再利用可能な知識に変え、その
 - [docs/04-security-and-privacy.md](docs/04-security-and-privacy.md)
 - [docs/05-architecture-overview.md](docs/05-architecture-overview.md)
 - [docs/code-review.md](docs/code-review.md)
+- [docs/references/mulmoclaude.md](docs/references/mulmoclaude.md)
 - [docs/adr/0001-initial-architecture.md](docs/adr/0001-initial-architecture.md)
 - [docs/adr/0002-zero-trust-for-agentic-work.md](docs/adr/0002-zero-trust-for-agentic-work.md)
+- [docs/adr/0003-plain-file-workspace.md](docs/adr/0003-plain-file-workspace.md)
 
 SDD の steering 文書は `spec/_custom/steering/` から参照できます。
 これらは実装仕様ではなく、Blueprint / Requirements / Design / Tasks を作る
 ための方向づけです。
+
+## 参考プロジェクト
+
+- [mulmoclaude](docs/references/mulmoclaude.md): LLM Wiki、local workspace、
+  lint / health check、workspace-as-agent 的な設計の参照元。
 
 ## プロダクトの目的
 

@@ -252,6 +252,28 @@ User SHOULD 理解できる:
 
 これは developer logging だけではなく、user trust infrastructure です。
 
+## Workspace lint は trust infrastructure
+
+Praxios の lint / health check は、formatting の補助機能ではありません。
+Workspace が壊れた状態、agent が誤った context を読む状態、review や provenance
+が抜けた状態を検出するための trust infrastructure です。
+
+Lint rules SHOULD 「どう整形するか」より先に「何が壊れた状態か」を定義します。
+
+初期 lint が検出するべき failure modes:
+
+- Source と Knowledge の provenance が切れている。
+- Generated Artifact が Source evidence として扱われている。
+- Task に done criteria、context requirements、required decisions がない。
+- Review required な action が approval なしで完了扱いになっている。
+- ContextPacket が task と無関係な data や sensitive data を含む。
+- Knowledge 間で矛盾、重複、stale assumption、broken link がある。
+- Event history、`log.md`、workspace files の state が食い違っている。
+
+Lint は初期 version では自動修正より検出、説明、proposal を優先します。
+Risky fix、Knowledge rewrite、external side effect を伴う修正には human approval
+が必要です。
+
 ## Security and privacy は architecture concern
 
 最初から sensitive work data を扱う前提で設計します。Access boundaries、

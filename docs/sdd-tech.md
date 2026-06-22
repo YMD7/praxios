@@ -35,6 +35,7 @@
 - test framework
 - golden test strategy
 - formatter / linter
+- workspace lint / health check command shape
 - CI/CD baseline
 - first CLI workflow
 
@@ -82,6 +83,15 @@ Functions だけでなく workflows を test します。
 AI-related behavior は fixtures を使って test するべきです。Exact text match より
 structural expectations を優先します。
 
+## Workspace lint direction
+
+Workspace lint / health check は formatting linter ではなく、plain-file workspace
+の破損、provenance 欠落、review 抜け、broken link、stale Knowledge、sync conflict
+などを検出する仕組みです。
+
+初期仕様では、自動修正より検出、説明、proposal を優先します。Risky fix や
+Knowledge rewrite は human approval を要求します。
+
 ## Security and privacy direction
 
 - Sensitive data は default で local に留める。
@@ -103,5 +113,6 @@ structural expectations を優先します。
 - `docs/03-engineering-principles.md`
 - `docs/04-security-and-privacy.md`
 - `docs/05-architecture-overview.md`
+- `docs/references/mulmoclaude.md`
 - `docs/adr/0001-initial-architecture.md`
 - `docs/adr/0002-zero-trust-for-agentic-work.md`

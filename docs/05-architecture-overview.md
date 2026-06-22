@@ -47,6 +47,7 @@ Application layer は次のような workflows を調整します。
 - routing Reviews
 - completing Tasks
 - proposing Knowledge updates
+- running workspace lint / health checks
 
 Application services は domain logic と ports を呼び出します。External service
 details を埋め込んではいけません。
@@ -116,6 +117,17 @@ domain model ではありません。
 Quartz は将来 Markdown knowledge の publish や browse に使えます。Quartz は
 rendering layer に留める必要があります。
 
+## Workspace lint / health check
+
+Plain-file workspace では、人間、agent、CLI、将来の UI が同じ files を扱います。
+そのため、broken links、missing frontmatter、stale Knowledge、approval 抜け、
+Event history との不一致、sync conflict などを検出する lint / health check が
+必要です。
+
+Lint は domain policy、storage representation、security / privacy、link graph を
+またぐ application concern です。CLI や UI は lint result を表示できますが、
+lint rules を所有してはいけません。
+
 ## 初期 repository layout
 
 現在の bootstrap layout:
@@ -134,9 +146,12 @@ docs/
   sdd-project.md
   sdd-structure.md
   sdd-tech.md
+  references/
+    mulmoclaude.md
   adr/
     0001-initial-architecture.md
     0002-zero-trust-for-agentic-work.md
+    0003-plain-file-workspace.md
 spec/
   README.md
   _custom/
