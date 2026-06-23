@@ -70,7 +70,7 @@
   - Artifact contract は `artifact_kind` ごとに `task_ref` 要否を validation できる
   - contracts が state transition authorization を持たない
 
-- [ ] T2.2: **Markdown frontmatter read/write を実装する**
+- [x] T2.2: **Markdown frontmatter read/write を実装する**
       _要件_: requirements.AC1.1, requirements.AC1.2
       _依存_: T2.1
       _完了条件_:
