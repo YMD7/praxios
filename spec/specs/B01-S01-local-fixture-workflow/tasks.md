@@ -165,7 +165,7 @@
   - `approve-review` 相当の application service で approved にできる
   - ReviewRequested と ReviewApproved log entries を append する
 
-- [ ] T4.3: **Task completion approval gate を実装する**
+- [x] T4.3: **Task completion approval gate を実装する**
       _要件_: requirements.AC4.2, requirements.AC5.1
       _依存_: T4.2
       _完了条件_:

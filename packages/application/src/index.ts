@@ -37,3 +37,8 @@ export {
   type RequestReviewInput,
   type ReviewWorkflowDependencies,
 } from "./review-workflow.js";
+export {
+  completeTask,
+  type CompleteTaskDependencies,
+  type CompleteTaskInput,
+} from "./task-completion.js";
