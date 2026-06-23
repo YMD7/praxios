@@ -19,3 +19,10 @@ export type { SourceRecord, SourceRepository } from "./source-repository.js";
 export type { TaskRecord, TaskRepository } from "./task-repository.js";
 export type { ReviewRecord, ReviewRepository } from "./review-repository.js";
 export type { Clock, IdGenerator } from "./time-and-id.js";
+export type {
+  WorkspaceFile,
+  WorkspaceMarkdownFile,
+  WorkspaceReader,
+  WorkspaceRecordKind,
+  WorkspaceSnapshot,
+} from "./workspace-reader.js";

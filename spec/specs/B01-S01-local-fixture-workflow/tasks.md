@@ -187,7 +187,7 @@
 
 ## Phase 5: Lint, CLI, workflow verification
 
-- [ ] T5.1: **Workspace lint rules を実装する**
+- [x] T5.1: **Workspace lint rules を実装する**
       _要件_: requirements.AC5.3
       _依存_: T2.1, T2.2, T4.4
       _完了条件_:

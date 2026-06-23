@@ -47,3 +47,8 @@ export {
   type ProposeKnowledgeUpdateDependencies,
   type ProposeKnowledgeUpdateInput,
 } from "./knowledge-update-proposal.js";
+export {
+  lintWorkspace,
+  type LintWorkspaceDependencies,
+  type LintWorkspaceInput,
+} from "./workspace-lint.js";
