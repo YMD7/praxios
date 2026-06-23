@@ -7,6 +7,8 @@ import type {
   ExtractTaskCandidatesOutput,
   GenerateArtifactDraftInput,
   GenerateArtifactDraftOutput,
+  ProposeKnowledgeUpdateInput,
+  ProposeKnowledgeUpdateOutput,
 } from "../../ports/src/index.js";
 
 export class DeterministicAgentAdapter implements AgentGateway {
@@ -60,6 +62,23 @@ export class DeterministicAgentAdapter implements AgentGateway {
         "- It is an Artifact draft, not Source evidence.",
         "",
       ].join("\n"),
+    };
+  }
+
+  async proposeKnowledgeUpdate(
+    _input: ProposeKnowledgeUpdateInput,
+  ): Promise<ProposeKnowledgeUpdateOutput> {
+    return {
+      title: "Support launch checklist knowledge update",
+      proposedChange:
+        "Add a reusable procedure for preparing customer-facing support handoff checklists before launch.",
+      rationale: [
+        "The completed Task showed that support ownership, escalation paths, and first-hour monitoring",
+        "should be captured before customer-facing launch communication is finalized.",
+      ].join(" "),
+      confidence: "medium",
+      uncertainty:
+        "This proposal is based on one completed Task and should be reviewed before promotion to Knowledge.",
     };
   }
 }

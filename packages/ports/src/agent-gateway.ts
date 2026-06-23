@@ -27,7 +27,23 @@ export interface GenerateArtifactDraftOutput {
   readonly body: unknown;
 }
 
+export interface ProposeKnowledgeUpdateInput {
+  readonly task: TaskRecord;
+  readonly context: CommandContext;
+}
+
+export interface ProposeKnowledgeUpdateOutput {
+  readonly title: unknown;
+  readonly proposedChange: unknown;
+  readonly rationale: unknown;
+  readonly confidence: unknown;
+  readonly uncertainty: unknown;
+}
+
 export interface AgentGateway {
   extractTaskCandidates(input: ExtractTaskCandidatesInput): Promise<ExtractTaskCandidatesOutput>;
   generateArtifactDraft(input: GenerateArtifactDraftInput): Promise<GenerateArtifactDraftOutput>;
+  proposeKnowledgeUpdate(
+    input: ProposeKnowledgeUpdateInput,
+  ): Promise<ProposeKnowledgeUpdateOutput>;
 }

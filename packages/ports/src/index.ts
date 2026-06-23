@@ -4,6 +4,8 @@ export type {
   ExtractTaskCandidatesOutput,
   GenerateArtifactDraftInput,
   GenerateArtifactDraftOutput,
+  ProposeKnowledgeUpdateInput,
+  ProposeKnowledgeUpdateOutput,
   ValidatedTaskCandidatesOutput,
 } from "./agent-gateway.js";
 export type { ArtifactRecord, ArtifactRepository } from "./artifact-repository.js";

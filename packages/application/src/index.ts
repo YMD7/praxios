@@ -42,3 +42,8 @@ export {
   type CompleteTaskDependencies,
   type CompleteTaskInput,
 } from "./task-completion.js";
+export {
+  proposeKnowledgeUpdate,
+  type ProposeKnowledgeUpdateDependencies,
+  type ProposeKnowledgeUpdateInput,
+} from "./knowledge-update-proposal.js";

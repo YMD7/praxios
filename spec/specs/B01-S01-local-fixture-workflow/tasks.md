@@ -175,7 +175,7 @@
   - 別 Task / 別 Artifact / scope 不一致の Review では completion を通さない
   - TaskCompleted log entry を append する
 
-- [ ] T4.4: **Learning / Knowledge update proposal を実装する**
+- [x] T4.4: **Learning / Knowledge update proposal を実装する**
       _要件_: requirements.AC5.2
       _依存_: T4.3
       _完了条件_:
