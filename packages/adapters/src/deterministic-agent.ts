@@ -5,6 +5,8 @@ import type {
   AgentGateway,
   ExtractTaskCandidatesInput,
   ExtractTaskCandidatesOutput,
+  GenerateArtifactDraftInput,
+  GenerateArtifactDraftOutput,
 } from "../../ports/src/index.js";
 
 export class DeterministicAgentAdapter implements AgentGateway {
@@ -31,6 +33,33 @@ export class DeterministicAgentAdapter implements AgentGateway {
 
     return {
       candidates: fixture.candidates ?? [],
+    };
+  }
+
+  async generateArtifactDraft(
+    input: GenerateArtifactDraftInput,
+  ): Promise<GenerateArtifactDraftOutput> {
+    return {
+      title: "Support handoff checklist draft",
+      body: [
+        "# Support handoff checklist draft",
+        "",
+        "## Purpose",
+        "",
+        "Prepare a customer-facing support handoff checklist for launch review.",
+        "",
+        "## Draft Checklist",
+        "",
+        "- Confirm the support escalation path.",
+        "- Identify who watches the first-hour incident channel.",
+        "- Send the checklist to Maya and Leo for review.",
+        "",
+        "## Evidence",
+        "",
+        "- This draft is generated from Task-scoped Source refs only.",
+        "- It is an Artifact draft, not Source evidence.",
+        "",
+      ].join("\n"),
     };
   }
 }

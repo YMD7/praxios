@@ -147,7 +147,7 @@
 
 ## Phase 4: Artifact, Review, completion, learning
 
-- [ ] T4.1: **Artifact draft generation を実装する**
+- [x] T4.1: **Artifact draft generation を実装する**
       _要件_: requirements.AC4.1
       _依存_: T3.5
       _完了条件_:

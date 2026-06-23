@@ -2,6 +2,8 @@ export type {
   AgentGateway,
   ExtractTaskCandidatesInput,
   ExtractTaskCandidatesOutput,
+  GenerateArtifactDraftInput,
+  GenerateArtifactDraftOutput,
   ValidatedTaskCandidatesOutput,
 } from "./agent-gateway.js";
 export type { ArtifactRecord, ArtifactRepository } from "./artifact-repository.js";

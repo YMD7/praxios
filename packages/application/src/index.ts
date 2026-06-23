@@ -25,3 +25,8 @@ export {
   type BuildContextPacketDependencies,
   type BuildContextPacketInput,
 } from "./context-packet.js";
+export {
+  generateArtifactDraft,
+  type GenerateArtifactDraftDependencies,
+  type GenerateArtifactDraftInput,
+} from "./artifact-draft.js";
