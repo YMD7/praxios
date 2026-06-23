@@ -101,7 +101,7 @@
 
 ## Phase 3: Source and Task workflow
 
-- [ ] T3.1: **Synthetic meeting transcript fixture を追加する**
+- [x] T3.1: **Synthetic meeting transcript fixture を追加する**
       _要件_: requirements.AC2.1
       _依存_: T1.2
       _完了条件_:
