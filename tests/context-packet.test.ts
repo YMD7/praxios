@@ -21,7 +21,7 @@ import {
   MarkdownTaskRepository,
   initializePlainFileWorkspace,
 } from "../packages/adapters/src/index";
-import type { CommandContext, SourceRecord } from "../packages/ports/src/index";
+import type { CommandContext, SourceRecord, TaskRecord } from "../packages/ports/src/index";
 
 describe("context packet workflow", () => {
   it("updates a Task Context Packet section using only scoped sources", async () => {
@@ -170,4 +170,62 @@ describe("context packet workflow", () => {
       "Built task-scoped ContextPacket section from allowed Source and Knowledge refs.",
     );
   });
+
+  it("rejects ContextPacket when Task knowledge refs are outside command scope", async () => {
+    const workspace = await mkdtemp(join(tmpdir(), "praxios-context-packet-"));
+    await initializePlainFileWorkspace(workspace);
+    const taskRepository = new MarkdownTaskRepository(workspace);
+    const task = await taskRepository.writeTask(createTaskWithKnowledgeRef());
+
+    await expect(
+      buildContextPacket(
+        {
+          task,
+          availableSources: [],
+          context: {
+            actor_id: "user",
+            command: "BuildContextPacket",
+            target: task.frontmatter.id,
+            task_ref: task.frontmatter.id,
+            allowed_source_refs: [],
+            allowed_knowledge_refs: [],
+            allowed_tools: ["deterministic-agent"],
+            approval_refs: [],
+          },
+        },
+        {
+          clock: new DeterministicClock(new Date("2026-06-23T00:00:00.000Z")),
+          eventLog: new MarkdownEventLog(workspace),
+          idGenerator: new DeterministicIdGenerator(),
+          taskRepository,
+        },
+      ),
+    ).rejects.toMatchObject({
+      code: "missing_reference",
+      target: task.frontmatter.id,
+    });
+
+    await expect(readFile(join(workspace, "log.md"), "utf8")).resolves.not.toContain(
+      "BuildContextPacket",
+    );
+  });
 });
+
+function createTaskWithKnowledgeRef(): TaskRecord {
+  return {
+    frontmatter: {
+      id: "task_0001",
+      type: "task",
+      title: "Task with scoped Knowledge requirement",
+      status: "active",
+      created: "2026-06-23T00:00:00.000Z",
+      updated: "2026-06-23T00:00:00.000Z",
+      trigger_refs: ["artifact_0001"],
+      source_refs: [],
+      knowledge_refs: ["know_0001"],
+      done_criteria: ["Context packet is built only with allowed Knowledge."],
+      review_required: true,
+    },
+    body: "# Task with scoped Knowledge requirement\n",
+  };
+}

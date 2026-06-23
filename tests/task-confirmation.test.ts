@@ -22,7 +22,7 @@ import {
   initializePlainFileWorkspace,
   parseMarkdownFrontmatter,
 } from "../packages/adapters/src/index";
-import type { CommandContext } from "../packages/ports/src/index";
+import type { ArtifactRecord, CommandContext } from "../packages/ports/src/index";
 
 describe("task confirmation workflow", () => {
   it("confirms a candidate-set Artifact local key into a distinct Task", async () => {
@@ -146,4 +146,79 @@ describe("task confirmation workflow", () => {
     expect(log).toContain("- new_status: active");
     expect(log).toContain("Confirmed candidate-1 from task candidate set Artifact.");
   });
+
+  it("rejects candidate Source refs outside Artifact and command scope before creating a Task", async () => {
+    const workspace = await mkdtemp(join(tmpdir(), "praxios-task-confirmation-"));
+    await initializePlainFileWorkspace(workspace);
+    const taskRepository = new MarkdownTaskRepository(workspace);
+    const candidateSetArtifact = createCandidateSetArtifactWithUnrelatedSourceRef();
+
+    await expect(
+      confirmTask(
+        {
+          candidateSetArtifact,
+          candidateKey: "candidate-1",
+          context: {
+            actor_id: "user",
+            command: "ConfirmTask",
+            target: "artifact_0001#candidate-1",
+            allowed_source_refs: ["src_0001"],
+            allowed_knowledge_refs: [],
+            allowed_tools: [],
+            approval_refs: [],
+          },
+        },
+        {
+          clock: new DeterministicClock(new Date("2026-06-23T00:00:00.000Z")),
+          eventLog: new MarkdownEventLog(workspace),
+          idGenerator: new DeterministicIdGenerator(),
+          taskRepository,
+        },
+      ),
+    ).rejects.toMatchObject({
+      code: "invalid_agent_output",
+      target: "artifact_0001",
+    });
+
+    await expect(readdir(join(workspace, "tasks"))).resolves.toEqual([]);
+    await expect(readFile(join(workspace, "log.md"), "utf8")).resolves.not.toContain(
+      "ConfirmTask",
+    );
+  });
 });
+
+function createCandidateSetArtifactWithUnrelatedSourceRef(): ArtifactRecord {
+  return {
+    frontmatter: {
+      id: "artifact_0001",
+      type: "artifact",
+      artifact_kind: "task_candidate_set",
+      title: "Task candidates",
+      status: "draft",
+      created: "2026-06-23T00:00:00.000Z",
+      updated: "2026-06-23T00:00:00.000Z",
+      source_refs: ["src_0001"],
+      generated_by: "deterministic-agent",
+      review_required: false,
+    },
+    body: [
+      "# Task Candidates",
+      "",
+      "## Task Candidates",
+      "",
+      "### candidate-1",
+      "",
+      "- title: Mixed source task",
+      "- status: proposed",
+      "- confidence: medium",
+      "- uncertainty: None.",
+      "- source_refs:",
+      "  - src_0001",
+      "  - src_9999",
+      "- proposed_done_criteria:",
+      "  - Do scoped work.",
+      "- extraction_rationale: Tampered candidate body includes unrelated source.",
+      "",
+    ].join("\n"),
+  };
+}

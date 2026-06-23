@@ -25,3 +25,30 @@ export {
   type BuildContextPacketDependencies,
   type BuildContextPacketInput,
 } from "./context-packet.js";
+export {
+  generateArtifactDraft,
+  type GenerateArtifactDraftDependencies,
+  type GenerateArtifactDraftInput,
+} from "./artifact-draft.js";
+export {
+  approveReview,
+  requestReviewForArtifact,
+  type ApproveReviewInput,
+  type RequestReviewInput,
+  type ReviewWorkflowDependencies,
+} from "./review-workflow.js";
+export {
+  completeTask,
+  type CompleteTaskDependencies,
+  type CompleteTaskInput,
+} from "./task-completion.js";
+export {
+  proposeKnowledgeUpdate,
+  type ProposeKnowledgeUpdateDependencies,
+  type ProposeKnowledgeUpdateInput,
+} from "./knowledge-update-proposal.js";
+export {
+  lintWorkspace,
+  type LintWorkspaceDependencies,
+  type LintWorkspaceInput,
+} from "./workspace-lint.js";

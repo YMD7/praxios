@@ -147,7 +147,7 @@
 
 ## Phase 4: Artifact, Review, completion, learning
 
-- [ ] T4.1: **Artifact draft generation を実装する**
+- [x] T4.1: **Artifact draft generation を実装する**
       _要件_: requirements.AC4.1
       _依存_: T3.5
       _完了条件_:
@@ -156,7 +156,7 @@
   - Artifact を Source evidence として扱わない
   - ArtifactDraftGenerated log entry を append する
 
-- [ ] T4.2: **Review request と approval simulation を実装する**
+- [x] T4.2: **Review request と approval simulation を実装する**
       _要件_: requirements.AC4.2
       _依存_: T4.1
       _完了条件_:
@@ -165,7 +165,7 @@
   - `approve-review` 相当の application service で approved にできる
   - ReviewRequested と ReviewApproved log entries を append する
 
-- [ ] T4.3: **Task completion approval gate を実装する**
+- [x] T4.3: **Task completion approval gate を実装する**
       _要件_: requirements.AC4.2, requirements.AC5.1
       _依存_: T4.2
       _完了条件_:
@@ -175,7 +175,7 @@
   - 別 Task / 別 Artifact / scope 不一致の Review では completion を通さない
   - TaskCompleted log entry を append する
 
-- [ ] T4.4: **Learning / Knowledge update proposal を実装する**
+- [x] T4.4: **Learning / Knowledge update proposal を実装する**
       _要件_: requirements.AC5.2
       _依存_: T4.3
       _完了条件_:
@@ -187,7 +187,7 @@
 
 ## Phase 5: Lint, CLI, workflow verification
 
-- [ ] T5.1: **Workspace lint rules を実装する**
+- [x] T5.1: **Workspace lint rules を実装する**
       _要件_: requirements.AC5.3
       _依存_: T2.1, T2.2, T4.4
       _完了条件_:
@@ -200,7 +200,7 @@
   - lint result は severity、code、message、target、suggested action を含む
   - lint は自動修正しない
 
-- [ ] T5.2: **CLI entrypoints を実装する**
+- [x] T5.2: **CLI entrypoints を実装する**
       _要件_: requirements.AC1.1, requirements.AC2.1, requirements.AC3.1, requirements.AC4.2, requirements.AC5.3
       _依存_: T3.5, T4.4, T5.1
       _完了条件_:
@@ -211,7 +211,7 @@
   - errors は actionable message と non-zero exit code を返す
   - `praxios lint` は `LintCompleted` log entry を append する
 
-- [ ] T5.3: **Happy path workflow test を追加する**
+- [x] T5.3: **Happy path workflow test を追加する**
       _要件_: requirements.テスト要件
       _依存_: T5.2
       _完了条件_:
@@ -219,7 +219,7 @@
   - happy-path fixture workspace に high-severity lint issue が残らない
   - `log.md` に主要 transition が記録される
 
-- [ ] T5.4: **Unit and adapter tests を追加する**
+- [x] T5.4: **Unit and adapter tests を追加する**
       _要件_: requirements.テスト要件
       _依存_: T5.1, T5.2
       _完了条件_:
@@ -229,7 +229,7 @@
   - Markdown adapter tests が read/write と frontmatter validation を検証する
   - malformed fake-agent output が domain command へ変換されないことを検証する
 
-- [ ] T5.5: **Failure workflow tests を追加する**
+- [x] T5.5: **Failure workflow tests を追加する**
       _要件_: requirements.テスト要件
       _依存_: T5.1, T5.2, T5.4
       _完了条件_:
@@ -239,7 +239,7 @@
   - approval なし、または target/scope が一致しない Task completion を拒否する
   - generated Artifact を Source evidence として扱う誤りを検出する
 
-- [ ] T5.6: **仕様同期と完了確認を行う**
+- [x] T5.6: **仕様同期と完了確認を行う**
       _要件_: requirements.完了条件
       _依存_: T5.3, T5.5
       _完了条件_:

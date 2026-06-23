@@ -29,6 +29,14 @@ export async function extractTaskCandidates(
   input: ExtractTaskCandidatesWorkflowInput,
   dependencies: ExtractTaskCandidatesWorkflowDependencies,
 ): Promise<ArtifactRecord> {
+  if (!input.context.allowed_source_refs.includes(input.source.frontmatter.id)) {
+    throw new ApplicationError({
+      code: "missing_reference",
+      message: "TaskCandidate extraction requires the captured Source in command scope.",
+      target: input.source.frontmatter.id,
+    });
+  }
+
   const rawOutput = await dependencies.agentGateway.extractTaskCandidates({
     fixtureName: input.fixtureName,
     source: input.source,
@@ -53,10 +61,14 @@ export async function extractTaskCandidates(
       });
     }
 
-    if (!result.data.source_refs.includes(input.source.frontmatter.id)) {
+    const hasOutOfScopeSourceRef = result.data.source_refs.some(
+      (sourceRef) => sourceRef !== input.source.frontmatter.id,
+    );
+    if (hasOutOfScopeSourceRef || !result.data.source_refs.includes(input.source.frontmatter.id)) {
       throw new ApplicationError({
         code: "invalid_agent_output",
-        message: "TaskCandidate extraction output is not grounded in the captured Source.",
+        message:
+          "TaskCandidate extraction output must be grounded only in the captured Source.",
         target: input.source.frontmatter.id,
       });
     }

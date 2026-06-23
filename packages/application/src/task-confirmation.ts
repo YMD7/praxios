@@ -42,6 +42,7 @@ export async function confirmTask(
   }
 
   const candidate = parseCandidateFromArtifact(input.candidateSetArtifact, input.candidateKey);
+  validateCandidateSourceScope(input, candidate);
   const now = dependencies.clock.now().toISOString();
   const task: TaskRecord = {
     frontmatter: {
@@ -81,6 +82,26 @@ export async function confirmTask(
   });
 
   return writtenTask;
+}
+
+function validateCandidateSourceScope(input: ConfirmTaskInput, candidate: ParsedCandidate): void {
+  const artifactSourceRefs = new Set(input.candidateSetArtifact.frontmatter.source_refs);
+  const allowedSourceRefs = new Set(input.context.allowed_source_refs);
+  const hasOutOfArtifactScopeRef = candidate.sourceRefs.some(
+    (sourceRef) => !artifactSourceRefs.has(sourceRef),
+  );
+  const hasOutOfCommandScopeRef = candidate.sourceRefs.some(
+    (sourceRef) => !allowedSourceRefs.has(sourceRef),
+  );
+
+  if (hasOutOfArtifactScopeRef || hasOutOfCommandScopeRef) {
+    throw new ApplicationError({
+      code: "invalid_agent_output",
+      message:
+        "TaskCandidate source refs must stay within the candidate set Artifact and command scope.",
+      target: input.candidateSetArtifact.frontmatter.id,
+    });
+  }
 }
 
 function parseCandidateFromArtifact(artifact: ArtifactRecord, candidateKey: string): ParsedCandidate {

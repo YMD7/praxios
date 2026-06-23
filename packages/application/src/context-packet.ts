@@ -40,6 +40,17 @@ export async function buildContextPacket(
     });
   }
 
+  const missingKnowledgeRefs = input.task.frontmatter.knowledge_refs.filter(
+    (knowledgeRef) => !input.context.allowed_knowledge_refs.includes(knowledgeRef),
+  );
+  if (missingKnowledgeRefs.length > 0) {
+    throw new ApplicationError({
+      code: "missing_reference",
+      message: "ContextPacket cannot be built with Knowledge refs outside command scope.",
+      target: input.task.frontmatter.id,
+    });
+  }
+
   const updatedTask: TaskRecord = {
     ...input.task,
     frontmatter: {
