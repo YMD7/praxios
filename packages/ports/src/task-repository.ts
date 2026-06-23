@@ -8,4 +8,5 @@ export interface TaskRecord {
 
 export interface TaskRepository {
   writeTask(task: TaskRecord): Promise<TaskRecord>;
+  updateTask(task: TaskRecord): Promise<TaskRecord>;
 }

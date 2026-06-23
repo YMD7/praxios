@@ -20,3 +20,8 @@ export {
   type ConfirmTaskDependencies,
   type ConfirmTaskInput,
 } from "./task-confirmation.js";
+export {
+  buildContextPacket,
+  type BuildContextPacketDependencies,
+  type BuildContextPacketInput,
+} from "./context-packet.js";

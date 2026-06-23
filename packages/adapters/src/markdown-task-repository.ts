@@ -9,12 +9,21 @@ export class MarkdownTaskRepository implements TaskRepository {
   constructor(private readonly workspacePath: string) {}
 
   async writeTask(task: TaskRecord): Promise<TaskRecord> {
+    return this.persistTask(task, "wx");
+  }
+
+  async updateTask(task: TaskRecord): Promise<TaskRecord> {
+    return this.persistTask(task, "w");
+  }
+
+  private async persistTask(task: TaskRecord, flag: "w" | "wx"): Promise<TaskRecord> {
     const parsedFrontmatter = TaskFrontmatterSchema.parse(task.frontmatter);
-    const fileName = buildMarkdownFileName({
-      id: parsedFrontmatter.id,
-      title: parsedFrontmatter.title,
-    });
-    const relativePath = `tasks/${fileName}`;
+    const relativePath =
+      task.relativePath ??
+      `tasks/${buildMarkdownFileName({
+        id: parsedFrontmatter.id,
+        title: parsedFrontmatter.title,
+      })}`;
 
     await writeFile(
       join(this.workspacePath, relativePath),
@@ -22,7 +31,7 @@ export class MarkdownTaskRepository implements TaskRepository {
         frontmatter: parsedFrontmatter,
         body: task.body,
       }),
-      { encoding: "utf8", flag: "wx" },
+      { encoding: "utf8", flag },
     );
 
     return {

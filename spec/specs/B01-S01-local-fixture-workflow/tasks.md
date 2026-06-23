@@ -136,7 +136,7 @@
   - TaskCandidate と confirmed Task の identity を混同しない
   - TaskConfirmed log entry を append する
 
-- [ ] T3.5: **ContextPacket section generation を実装する**
+- [x] T3.5: **ContextPacket section generation を実装する**
       _要件_: requirements.AC3.2
       _依存_: T3.4
       _完了条件_:
