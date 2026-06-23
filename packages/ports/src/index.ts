@@ -1,3 +1,10 @@
+export type {
+  AgentGateway,
+  ExtractTaskCandidatesInput,
+  ExtractTaskCandidatesOutput,
+  ValidatedTaskCandidatesOutput,
+} from "./agent-gateway.js";
+export type { ArtifactRecord, ArtifactRepository } from "./artifact-repository.js";
 export type { CommandContext } from "./command-context.js";
 export type { EventLog } from "./event-log.js";
 export type {

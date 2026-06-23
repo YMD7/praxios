@@ -117,7 +117,7 @@
   - `content_hash` により同一 fixture の duplicate Source を防げる
   - SourceCaptured log entry を append する
 
-- [ ] T3.3: **DeterministicAgentAdapter で TaskCandidate extraction を実装する**
+- [x] T3.3: **DeterministicAgentAdapter で TaskCandidate extraction を実装する**
       _要件_: requirements.AC2.2
       _依存_: T2.1, T3.1, T3.2
       _完了条件_:

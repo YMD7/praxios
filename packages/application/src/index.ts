@@ -10,3 +10,8 @@ export {
   type CaptureFixtureSourceInput,
   type CaptureFixtureSourceResult,
 } from "./source-capture.js";
+export {
+  extractTaskCandidates,
+  type ExtractTaskCandidatesWorkflowDependencies,
+  type ExtractTaskCandidatesWorkflowInput,
+} from "./task-candidate-extraction.js";

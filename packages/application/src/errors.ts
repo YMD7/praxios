@@ -3,6 +3,7 @@ export const APPLICATION_ERROR_CODES = [
   "invalid_frontmatter",
   "missing_reference",
   "invalid_transition",
+  "invalid_agent_output",
   "approval_required",
   "fixture_not_found",
   "lint_failed",
