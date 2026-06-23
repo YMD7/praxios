@@ -17,9 +17,9 @@ export const TaskFrontmatterSchema = z.object({
   status: TaskStatusSchema,
   created: IsoDateTimeSchema,
   updated: IsoDateTimeSchema,
-  trigger_refs: z.array(ArtifactRefSchema).default([]),
-  source_refs: z.array(SourceRefSchema).default([]),
-  knowledge_refs: z.array(KnowledgeRefSchema).default([]),
+  trigger_refs: z.array(ArtifactRefSchema),
+  source_refs: z.array(SourceRefSchema),
+  knowledge_refs: z.array(KnowledgeRefSchema),
   done_criteria: z.array(NonEmptyStringSchema).min(1),
   review_required: z.boolean(),
 });

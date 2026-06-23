@@ -91,6 +91,9 @@ describe("contracts", () => {
 
     expect(TaskFrontmatterSchema.safeParse(task).success).toBe(true);
     expect(TaskFrontmatterSchema.safeParse({ ...task, done_criteria: [] }).success).toBe(false);
+    expect(TaskFrontmatterSchema.safeParse({ ...task, source_refs: undefined }).success).toBe(
+      false,
+    );
   });
 
   it("validates Artifact task_ref requirements by artifact kind", () => {

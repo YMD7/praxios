@@ -32,7 +32,13 @@ export function parseMarkdownFrontmatter<TFrontmatter>(
     throw new MarkdownFrontmatterError("Markdown frontmatter block is missing or malformed.");
   }
 
-  const rawFrontmatter = parse(match[1]) as unknown;
+  let rawFrontmatter: unknown;
+  try {
+    rawFrontmatter = parse(match[1]) as unknown;
+  } catch (error) {
+    throw new MarkdownFrontmatterError("Markdown frontmatter YAML failed parsing.", error);
+  }
+
   const result = schema.safeParse(rawFrontmatter);
 
   if (!result.success) {
