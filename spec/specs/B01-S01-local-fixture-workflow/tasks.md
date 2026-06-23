@@ -22,7 +22,7 @@
 
 ## Phase 1: Runtime baseline
 
-- [ ] T1.1: **TypeScript workspace を初期化する**
+- [x] T1.1: **TypeScript workspace を初期化する**
       _要件_: requirements.技術制約
       _依存_: なし
       _完了条件_:
@@ -31,7 +31,7 @@
     `packages/adapters`、`contracts` の必要最小限の実装 directory を作る
   - 空の将来 directory は作らない
 
-- [ ] T1.2: **Vitest と基本 test scripts を設定する**
+- [x] T1.2: **Vitest と基本 test scripts を設定する**
       _要件_: requirements.テスト要件
       _依存_: T1.1
       _完了条件_:
