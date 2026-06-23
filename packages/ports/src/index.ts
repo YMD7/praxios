@@ -1,1 +1,1 @@
-export const portsLayer = "ports";
+export type { Clock, IdGenerator } from "./time-and-id.js";

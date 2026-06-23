@@ -39,7 +39,7 @@
   - 最小 smoke test が通る
   - test fixture 出力先は repository の canonical docs と混ざらない
 
-- [ ] T1.3: **共通型とエラー型を定義する**
+- [x] T1.3: **共通型とエラー型を定義する**
       _要件_: design.Error handling
       _依存_: T1.1
       _完了条件_:
@@ -49,7 +49,7 @@
     表現できる
   - CLI が error code を表示できる形にする
 
-- [ ] T1.4: **ID generator と Clock port を実装する**
+- [x] T1.4: **ID generator と Clock port を実装する**
       _要件_: requirements.AC2.1, requirements.AC5.1
       _依存_: T1.1
       _完了条件_:
