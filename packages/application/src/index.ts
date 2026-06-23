@@ -30,3 +30,10 @@ export {
   type GenerateArtifactDraftDependencies,
   type GenerateArtifactDraftInput,
 } from "./artifact-draft.js";
+export {
+  approveReview,
+  requestReviewForArtifact,
+  type ApproveReviewInput,
+  type RequestReviewInput,
+  type ReviewWorkflowDependencies,
+} from "./review-workflow.js";

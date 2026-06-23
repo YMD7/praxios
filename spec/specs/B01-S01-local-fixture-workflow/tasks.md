@@ -156,7 +156,7 @@
   - Artifact を Source evidence として扱わない
   - ArtifactDraftGenerated log entry を append する
 
-- [ ] T4.2: **Review request と approval simulation を実装する**
+- [x] T4.2: **Review request と approval simulation を実装する**
       _要件_: requirements.AC4.2
       _依存_: T4.1
       _完了条件_:
