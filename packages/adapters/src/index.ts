@@ -16,6 +16,7 @@ export {
 export { MarkdownEventLog, formatEventLogEntry } from "./markdown-event-log.js";
 export { MarkdownArtifactRepository } from "./markdown-artifact-repository.js";
 export { MarkdownSourceRepository } from "./markdown-source-repository.js";
+export { MarkdownTaskRepository } from "./markdown-task-repository.js";
 export {
   initializePlainFileWorkspace,
   WORKSPACE_DOMAIN_DIRECTORIES,

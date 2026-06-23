@@ -127,7 +127,7 @@
   - candidate set は Task confirm 前の Artifact なので `task_ref` を捏造しない
   - TaskCandidateCreated log entry を append する
 
-- [ ] T3.4: **Task confirmation を実装する**
+- [x] T3.4: **Task confirmation を実装する**
       _要件_: requirements.AC3.1
       _依存_: T3.3
       _完了条件_:

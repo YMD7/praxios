@@ -15,3 +15,8 @@ export {
   type ExtractTaskCandidatesWorkflowDependencies,
   type ExtractTaskCandidatesWorkflowInput,
 } from "./task-candidate-extraction.js";
+export {
+  confirmTask,
+  type ConfirmTaskDependencies,
+  type ConfirmTaskInput,
+} from "./task-confirmation.js";
