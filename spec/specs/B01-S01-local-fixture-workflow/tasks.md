@@ -211,7 +211,7 @@
   - errors は actionable message と non-zero exit code を返す
   - `praxios lint` は `LintCompleted` log entry を append する
 
-- [ ] T5.3: **Happy path workflow test を追加する**
+- [x] T5.3: **Happy path workflow test を追加する**
       _要件_: requirements.テスト要件
       _依存_: T5.2
       _完了条件_:

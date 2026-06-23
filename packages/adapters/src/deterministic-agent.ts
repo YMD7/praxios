@@ -34,7 +34,9 @@ export class DeterministicAgentAdapter implements AgentGateway {
     ) as { readonly candidates?: readonly unknown[] };
 
     return {
-      candidates: fixture.candidates ?? [],
+      candidates: (fixture.candidates ?? []).map((candidate) =>
+        groundTaskCandidate(candidate, input.source.frontmatter.id),
+      ),
     };
   }
 
@@ -81,4 +83,15 @@ export class DeterministicAgentAdapter implements AgentGateway {
         "This proposal is based on one completed Task and should be reviewed before promotion to Knowledge.",
     };
   }
+}
+
+function groundTaskCandidate(candidate: unknown, sourceRef: string): unknown {
+  if (typeof candidate !== "object" || candidate === null || Array.isArray(candidate)) {
+    return candidate;
+  }
+
+  return {
+    ...candidate,
+    source_refs: [sourceRef],
+  };
 }
