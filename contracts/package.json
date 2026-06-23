@@ -2,5 +2,8 @@
   "name": "@praxios/contracts",
   "version": "0.0.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "zod": "4.2.1"
+  }
 }

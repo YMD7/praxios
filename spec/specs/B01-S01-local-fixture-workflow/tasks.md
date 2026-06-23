@@ -59,7 +59,7 @@
 
 ## Phase 2: Contracts and workspace adapter
 
-- [ ] T2.1: **Zod contracts を追加する**
+- [x] T2.1: **Zod contracts を追加する**
       _要件_: requirements.AC2.1, requirements.AC3.1, requirements.AC4.1, requirements.AC4.2
       _依存_: T1.1, T1.3, T1.4
       _完了条件_:
