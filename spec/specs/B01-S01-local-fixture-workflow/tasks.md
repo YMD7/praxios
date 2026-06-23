@@ -200,7 +200,7 @@
   - lint result は severity、code、message、target、suggested action を含む
   - lint は自動修正しない
 
-- [ ] T5.2: **CLI entrypoints を実装する**
+- [x] T5.2: **CLI entrypoints を実装する**
       _要件_: requirements.AC1.1, requirements.AC2.1, requirements.AC3.1, requirements.AC4.2, requirements.AC5.3
       _依存_: T3.5, T4.4, T5.1
       _完了条件_:
