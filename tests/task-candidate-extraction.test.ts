@@ -186,6 +186,75 @@ describe("task candidate extraction workflow", () => {
       "ExtractTaskCandidates",
     );
   });
+
+  it("rejects TaskCandidate output with unrelated Source refs", async () => {
+    const workspace = await mkdtemp(join(tmpdir(), "praxios-candidate-extraction-"));
+    await initializePlainFileWorkspace(workspace);
+    const source = createSource();
+
+    const unrelatedRefAgent: AgentGateway = {
+      async extractTaskCandidates() {
+        return {
+          candidates: [
+            {
+              key: "candidate-1",
+              title: "Mixed source task",
+              status: "proposed",
+              proposed_done_criteria: ["Do work."],
+              source_refs: [source.frontmatter.id, "src_9999"],
+              knowledge_refs: [],
+              confidence: "medium",
+              uncertainty: "None.",
+              extraction_rationale: "Includes an unrelated Source ref.",
+            },
+          ],
+        };
+      },
+      async generateArtifactDraft() {
+        return { title: "Unused", body: "Unused" };
+      },
+      async proposeKnowledgeUpdate() {
+        return {
+          title: "Unused",
+          proposedChange: "Unused",
+          rationale: "Unused",
+          confidence: "low",
+          uncertainty: "Unused",
+        };
+      },
+    };
+
+    await expect(
+      extractTaskCandidates(
+        {
+          fixtureName: "product-launch-sync",
+          source,
+          context: {
+            actor_id: "user",
+            agent_id: "unrelated-ref-agent",
+            command: "ExtractTaskCandidates",
+            target: source.frontmatter.id,
+            allowed_source_refs: [source.frontmatter.id, "src_9999"],
+            allowed_knowledge_refs: [],
+            allowed_tools: ["unrelated-ref-agent"],
+            approval_refs: [],
+          },
+        },
+        {
+          agentGateway: unrelatedRefAgent,
+          artifactRepository: new MarkdownArtifactRepository(workspace),
+          clock: new DeterministicClock(new Date("2026-06-23T00:00:00.000Z")),
+          eventLog: new MarkdownEventLog(workspace),
+          idGenerator: new DeterministicIdGenerator(),
+        },
+      ),
+    ).rejects.toMatchObject({
+      code: "invalid_agent_output",
+      target: source.frontmatter.id,
+    });
+
+    await expect(readdir(join(workspace, "artifacts"))).resolves.toEqual([]);
+  });
 });
 
 function createSource(): SourceRecord {
