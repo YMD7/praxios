@@ -78,7 +78,7 @@
   - frontmatter validation failure を `invalid_frontmatter` として返す
   - write 時に human-readable slug filename と stable `id` を分離できる
 
-- [ ] T2.3: **Workspace initialization を実装する**
+- [x] T2.3: **Workspace initialization を実装する**
       _要件_: requirements.AC1.1, requirements.AC1.2
       _依存_: T2.2
       _完了条件_:
