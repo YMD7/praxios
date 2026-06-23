@@ -229,7 +229,7 @@
   - Markdown adapter tests が read/write と frontmatter validation を検証する
   - malformed fake-agent output が domain command へ変換されないことを検証する
 
-- [ ] T5.5: **Failure workflow tests を追加する**
+- [x] T5.5: **Failure workflow tests を追加する**
       _要件_: requirements.テスト要件
       _依存_: T5.1, T5.2, T5.4
       _完了条件_:
