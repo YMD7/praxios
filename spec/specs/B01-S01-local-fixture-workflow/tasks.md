@@ -87,7 +87,7 @@
   - `.praxios/` に canonical user data を置かない
   - 再実行しても既存 canonical data を破壊しない
 
-- [ ] T2.4: **Event log adapter を実装する**
+- [x] T2.4: **Event log adapter を実装する**
       _要件_: requirements.AC5.1
       _依存_: T2.2, T2.3
       _完了条件_:

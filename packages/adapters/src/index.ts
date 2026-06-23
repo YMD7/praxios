@@ -11,6 +11,7 @@ export {
   stringifyMarkdownFrontmatter,
   type MarkdownDocument,
 } from "./markdown-frontmatter.js";
+export { MarkdownEventLog, formatEventLogEntry } from "./markdown-event-log.js";
 export {
   initializePlainFileWorkspace,
   WORKSPACE_DOMAIN_DIRECTORIES,
