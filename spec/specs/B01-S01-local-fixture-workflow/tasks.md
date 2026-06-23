@@ -219,7 +219,7 @@
   - happy-path fixture workspace に high-severity lint issue が残らない
   - `log.md` に主要 transition が記録される
 
-- [ ] T5.4: **Unit and adapter tests を追加する**
+- [x] T5.4: **Unit and adapter tests を追加する**
       _要件_: requirements.テスト要件
       _依存_: T5.1, T5.2
       _完了条件_:

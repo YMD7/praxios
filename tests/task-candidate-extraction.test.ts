@@ -17,7 +17,7 @@ import {
   initializePlainFileWorkspace,
   parseMarkdownFrontmatter,
 } from "../packages/adapters/src/index";
-import type { CommandContext } from "../packages/ports/src/index";
+import type { AgentGateway, CommandContext, SourceRecord } from "../packages/ports/src/index";
 
 describe("task candidate extraction workflow", () => {
   it("validates deterministic agent output before storing a candidate-set Artifact", async () => {
@@ -117,4 +117,91 @@ describe("task candidate extraction workflow", () => {
       "Generated and validated TaskCandidate set from captured Source.",
     );
   });
+
+  it("rejects malformed fake-agent output before storing an Artifact", async () => {
+    const workspace = await mkdtemp(join(tmpdir(), "praxios-candidate-extraction-"));
+    await initializePlainFileWorkspace(workspace);
+    const source = createSource();
+
+    const malformedAgent: AgentGateway = {
+      async extractTaskCandidates() {
+        return {
+          candidates: [
+            {
+              key: "candidate-1",
+              title: "Ungrounded task",
+              proposed_done_criteria: ["Do work."],
+              source_refs: [],
+              confidence: "medium",
+              extraction_rationale: "Missing source evidence.",
+            },
+          ],
+        };
+      },
+      async generateArtifactDraft() {
+        return { title: "Unused", body: "Unused" };
+      },
+      async proposeKnowledgeUpdate() {
+        return {
+          title: "Unused",
+          proposedChange: "Unused",
+          rationale: "Unused",
+          confidence: "low",
+          uncertainty: "Unused",
+        };
+      },
+    };
+
+    await expect(
+      extractTaskCandidates(
+        {
+          fixtureName: "product-launch-sync",
+          source,
+          context: {
+            actor_id: "user",
+            agent_id: "malformed-agent",
+            command: "ExtractTaskCandidates",
+            target: source.frontmatter.id,
+            allowed_source_refs: [source.frontmatter.id],
+            allowed_knowledge_refs: [],
+            allowed_tools: ["malformed-agent"],
+            approval_refs: [],
+          },
+        },
+        {
+          agentGateway: malformedAgent,
+          artifactRepository: new MarkdownArtifactRepository(workspace),
+          clock: new DeterministicClock(new Date("2026-06-23T00:00:00.000Z")),
+          eventLog: new MarkdownEventLog(workspace),
+          idGenerator: new DeterministicIdGenerator(),
+        },
+      ),
+    ).rejects.toMatchObject({
+      code: "invalid_agent_output",
+      target: "product-launch-sync",
+    });
+
+    await expect(readdir(join(workspace, "artifacts"))).resolves.toEqual([]);
+    await expect(readFile(join(workspace, "log.md"), "utf8")).resolves.not.toContain(
+      "ExtractTaskCandidates",
+    );
+  });
 });
+
+function createSource(): SourceRecord {
+  return {
+    frontmatter: {
+      id: "src_0001",
+      type: "source",
+      title: "Product launch sync",
+      status: "captured",
+      created: "2026-06-23T00:00:00.000Z",
+      updated: "2026-06-23T00:00:00.000Z",
+      origin: "fixture:product-launch-sync",
+      observed_at: "2026-06-23T00:00:00.000Z",
+      content_hash: "sha256:product-launch-sync",
+      sensitivity: "internal",
+    },
+    body: "# Product launch sync\n",
+  };
+}
