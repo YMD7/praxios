@@ -109,7 +109,7 @@
   - expected TaskCandidate output fixture を追加する
   - fixture に secret、token、credential、real private data が含まれない
 
-- [ ] T3.2: **Source capture workflow を実装する**
+- [x] T3.2: **Source capture workflow を実装する**
       _要件_: requirements.AC2.1
       _依存_: T2.3, T2.4, T3.1
       _完了条件_:
