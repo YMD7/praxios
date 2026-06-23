@@ -1,0 +1,42 @@
+{
+  "source_fixture": "fixtures/meetings/product-launch-sync.md",
+  "source_ref": "src_0001",
+  "candidates": [
+    {
+      "key": "candidate-1",
+      "status": "proposed",
+      "title": "Draft the customer-facing support handoff checklist",
+      "trigger": "Priya committed to drafting the launch support handoff checklist before review.",
+      "inferred_intent": "Prepare a reviewable checklist that explains escalation and first-hour incident ownership before the customer update is sent.",
+      "proposed_done_criteria": [
+        "Checklist draft includes the support escalation path.",
+        "Checklist draft identifies who watches the first-hour incident channel.",
+        "Checklist draft is sent to Maya and Leo for review."
+      ],
+      "source_refs": ["src_0001"],
+      "knowledge_refs": [],
+      "confidence": "high",
+      "uncertainty": "The exact checklist template is not specified in the transcript.",
+      "extraction_rationale": "The transcript includes an explicit commitment from Priya, review recipients, deadline, and required checklist contents.",
+      "related_task_refs": []
+    },
+    {
+      "key": "candidate-2",
+      "status": "proposed",
+      "title": "Confirm final import status wording for the release note",
+      "trigger": "Theo noted that the release note still uses older import status wording.",
+      "inferred_intent": "Get the final status labels from design so Engineering can update the release note.",
+      "proposed_done_criteria": [
+        "Final import status labels are confirmed with design.",
+        "Exact wording is posted in the launch room.",
+        "Engineering has enough information to update the release note."
+      ],
+      "source_refs": ["src_0001"],
+      "knowledge_refs": [],
+      "confidence": "high",
+      "uncertainty": "The transcript does not include the final labels themselves.",
+      "extraction_rationale": "The transcript states that the release note wording is stale and Maya will confirm and post the final wording.",
+      "related_task_refs": []
+    }
+  ]
+}

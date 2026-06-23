@@ -64,6 +64,13 @@ describe("markdown frontmatter adapter", () => {
       MarkdownFrontmatterError,
     );
 
+    expect(() =>
+      parseMarkdownFrontmatter(
+        ["---", "id: [unterminated", "type: source", "---", "# Body", ""].join("\n"),
+        SourceFrontmatterSchema,
+      ),
+    ).toThrow(MarkdownFrontmatterError);
+
     try {
       parseMarkdownFrontmatter(
         ["---", "id: bad", "type: source", "---", "# Body", ""].join("\n"),

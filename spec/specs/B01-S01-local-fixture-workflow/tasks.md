@@ -101,7 +101,7 @@
 
 ## Phase 3: Source and Task workflow
 
-- [ ] T3.1: **Synthetic meeting transcript fixture を追加する**
+- [x] T3.1: **Synthetic meeting transcript fixture を追加する**
       _要件_: requirements.AC2.1
       _依存_: T1.2
       _完了条件_:
@@ -109,7 +109,7 @@
   - expected TaskCandidate output fixture を追加する
   - fixture に secret、token、credential、real private data が含まれない
 
-- [ ] T3.2: **Source capture workflow を実装する**
+- [x] T3.2: **Source capture workflow を実装する**
       _要件_: requirements.AC2.1
       _依存_: T2.3, T2.4, T3.1
       _完了条件_:
@@ -117,7 +117,7 @@
   - `content_hash` により同一 fixture の duplicate Source を防げる
   - SourceCaptured log entry を append する
 
-- [ ] T3.3: **DeterministicAgentAdapter で TaskCandidate extraction を実装する**
+- [x] T3.3: **DeterministicAgentAdapter で TaskCandidate extraction を実装する**
       _要件_: requirements.AC2.2
       _依存_: T2.1, T3.1, T3.2
       _完了条件_:
@@ -127,7 +127,7 @@
   - candidate set は Task confirm 前の Artifact なので `task_ref` を捏造しない
   - TaskCandidateCreated log entry を append する
 
-- [ ] T3.4: **Task confirmation を実装する**
+- [x] T3.4: **Task confirmation を実装する**
       _要件_: requirements.AC3.1
       _依存_: T3.3
       _完了条件_:
@@ -136,7 +136,7 @@
   - TaskCandidate と confirmed Task の identity を混同しない
   - TaskConfirmed log entry を append する
 
-- [ ] T3.5: **ContextPacket section generation を実装する**
+- [x] T3.5: **ContextPacket section generation を実装する**
       _要件_: requirements.AC3.2
       _依存_: T3.4
       _完了条件_:
