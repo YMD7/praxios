@@ -9,8 +9,10 @@ Praxios は、日々の業務情報を再利用可能な知識に変え、その
 
 ## 現在の状態
 
-このリポジトリはブートストラップ段階です。まだ runtime application code
-はありません。最初の成果物は、今後の実装とレビューが従う基礎文書です。
+このリポジトリは初期実装段階です。基礎文書と SDD 構造に加えて、
+`B01-S01 local fixture workflow` の小さな vertical slice が入っています。
+この slice は local files と synthetic fixtures だけを使い、外部 SaaS 連携、
+external LLM provider、production deployment、自律的な外部送信は含みません。
 
 今後の Codex session は、コード変更前に次の文書を読む必要があります。
 
@@ -57,7 +59,7 @@ Source -> Knowledge -> Task -> Context -> Execution
 最初の milestone は full product ではありません。外部連携や web UI を
 作る前に、local files と fixtures だけで小さな vertical slice を通します。
 
-推奨する最初の slice は次の通りです。
+現在の `B01-S01` slice は次の流れを実装しています。
 
 (1) meeting transcript fixture を Source として読み込む
 (2) TaskCandidate を抽出する
@@ -68,10 +70,97 @@ Source -> Knowledge -> Task -> Context -> Execution
 (7) approval を simulate する
 (8) Task を complete する
 (9) Learning / Knowledge update proposal を作る
+(10) workspace lint / health check を実行する
 
 最初から real Gmail、Slack、Notion、Google integrations、vector database、
 multi-user permissions、production deployment、自律的な外部送信は作り
 ません。
+
+## S01 local workflow の実行
+
+依存関係を入れた後、まず build と test を実行します。
+
+```bash
+pnpm install
+```
+
+```bash
+pnpm build
+```
+
+```bash
+pnpm test
+```
+
+CLI は build 後の `apps/cli/dist/index.js` から実行できます。以下は一時
+workspace で synthetic fixture を使う例です。
+
+```bash
+WORKSPACE=/tmp/praxios-workspace
+```
+
+```bash
+node apps/cli/dist/index.js init \
+  --workspace "$WORKSPACE"
+```
+
+```bash
+node apps/cli/dist/index.js load-fixture product-launch-sync \
+  --workspace "$WORKSPACE"
+```
+
+以降の command は直前の JSON 出力に含まれる `id` を使って進めます。
+
+```bash
+node apps/cli/dist/index.js extract-task-candidates <source_id> \
+  product-launch-sync \
+  --workspace "$WORKSPACE"
+```
+
+```bash
+node apps/cli/dist/index.js confirm-task <candidate_artifact_id> \
+  candidate-1 \
+  --workspace "$WORKSPACE"
+```
+
+```bash
+node apps/cli/dist/index.js build-context <task_id> \
+  --workspace "$WORKSPACE"
+```
+
+```bash
+node apps/cli/dist/index.js draft-artifact <task_id> \
+  --workspace "$WORKSPACE"
+```
+
+```bash
+node apps/cli/dist/index.js request-review <artifact_id> \
+  --workspace "$WORKSPACE"
+```
+
+```bash
+node apps/cli/dist/index.js approve-review <review_id> \
+  "Approved for completion." \
+  --workspace "$WORKSPACE"
+```
+
+```bash
+node apps/cli/dist/index.js complete-task <task_id> <artifact_id> \
+  --workspace "$WORKSPACE"
+```
+
+```bash
+node apps/cli/dist/index.js propose-learning <task_id> \
+  --workspace "$WORKSPACE"
+```
+
+```bash
+node apps/cli/dist/index.js lint \
+  --workspace "$WORKSPACE"
+```
+
+CLI は application services を呼ぶ薄い entrypoint です。business logic は
+CLI ではなく `packages/application` と contracts / adapters 側に置きます。
 
 ## Local tooling
 

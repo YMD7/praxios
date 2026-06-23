@@ -239,7 +239,7 @@
   - approval なし、または target/scope が一致しない Task completion を拒否する
   - generated Artifact を Source evidence として扱う誤りを検出する
 
-- [ ] T5.6: **仕様同期と完了確認を行う**
+- [x] T5.6: **仕様同期と完了確認を行う**
       _要件_: requirements.完了条件
       _依存_: T5.3, T5.5
       _完了条件_:
