@@ -1,0 +1,132 @@
+:root {
+  font-family: system-ui, -apple-system, "Hiragino Sans", sans-serif;
+  color: #1a1a1a;
+  background: #f6f7f9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: #1f2430;
+  color: #cdd3df;
+  padding: 20px 16px;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 24px;
+  color: #fff;
+}
+
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar a {
+  color: #cdd3df;
+  text-decoration: none;
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+.sidebar a:hover {
+  background: #2c3242;
+}
+
+.sidebar a.active {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.content {
+  padding: 28px 32px;
+}
+
+h1 {
+  font-size: 22px;
+  margin: 0 0 16px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e3e6ec;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.task-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e3e6ec;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.task-row:hover {
+  border-color: #3b82f6;
+}
+
+.badge {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eef1f6;
+  color: #555;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d4d8e0;
+  border-radius: 6px;
+  font: inherit;
+  margin-bottom: 10px;
+}
+
+button {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #2563eb;
+}
+
+.muted {
+  color: #8a8f99;
+}
+
+.field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}

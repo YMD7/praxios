@@ -1,0 +1,24 @@
+{
+  "name": "praxios",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "db:migrate": "pnpm --filter @praxios/db migrate",
+    "db:seed": "pnpm --filter @praxios/db seed",
+    "db:setup": "pnpm db:migrate && pnpm db:seed",
+    "dev:api": "pnpm --filter @praxios/api dev",
+    "dev:web": "pnpm --filter @praxios/web dev",
+    "dev:worker": "pnpm --filter @praxios/worker dev",
+    "dev": "pnpm db:setup && concurrently -n api,web -c blue,green \"pnpm dev:api\" \"pnpm dev:web\"",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1",
+    "typescript": "^5.6.3"
+  }
+}

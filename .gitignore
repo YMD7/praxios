@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# ローカル永続データ（SQLite 本体 + Source 正本ファイル）
+/data/
+
+# 環境変数
+.env
+.env.local
+
+# ログ
+*.log
