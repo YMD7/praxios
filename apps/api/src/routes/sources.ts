@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import type { Repositories } from "@praxios/core";
 import { readSourceContent, saveSourceContent } from "@praxios/db";
+import { analyzeSource } from "@praxios/pipeline";
 import { randomUUID } from "node:crypto";
 
 const createSchema = z.object({
@@ -51,6 +52,16 @@ export function sourcesRoutes(repos: Repositories) {
       content = "(本文ファイルを読み込めませんでした)";
     }
     return c.json({ ...source, content });
+  });
+
+  // Source を解析して Proposal を生成する（手動トリガ）。
+  r.post("/:id/analyze", async (c) => {
+    try {
+      const created = await analyzeSource(repos, c.req.param("id"));
+      return c.json({ created });
+    } catch (err) {
+      return c.json({ error: String(err) }, 400);
+    }
   });
 
   return r;

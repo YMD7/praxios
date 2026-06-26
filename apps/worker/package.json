@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@praxios/core": "workspace:*",
-    "@praxios/db": "workspace:*"
+    "@praxios/db": "workspace:*",
+    "@praxios/pipeline": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",

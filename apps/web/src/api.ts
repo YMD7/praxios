@@ -1,4 +1,4 @@
-import type { Source, Task } from "@praxios/core";
+import type { Proposal, Source, Task } from "@praxios/core";
 
 export type SourceWithContent = Source & { content: string };
 
@@ -48,5 +48,23 @@ export const api = {
     get: (id: string) => http<SourceWithContent>(`/sources/${id}`),
     create: (body: CreateSourceInput) =>
       http<Source>("/sources", { method: "POST", body: JSON.stringify(body) }),
+    analyze: (id: string) =>
+      http<{ created: Proposal[] }>(`/sources/${id}/analyze`, {
+        method: "POST",
+      }),
+  },
+  proposals: {
+    list: (status?: string) =>
+      http<Proposal[]>(`/proposals${status ? `?status=${status}` : ""}`),
+    approve: (id: string, body: { reviewComment?: string } = {}) =>
+      http<{ proposal: Proposal; result?: unknown; error?: string }>(
+        `/proposals/${id}/approve`,
+        { method: "POST", body: JSON.stringify(body) },
+      ),
+    reject: (id: string, body: { reviewComment?: string } = {}) =>
+      http<Proposal>(`/proposals/${id}/reject`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
   },
 };

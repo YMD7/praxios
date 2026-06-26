@@ -1,25 +1,30 @@
 /**
- * AI Worker（Phase 0 スタブ）。
+ * AI Worker。
  *
- * Phase 3 で Source を解析し、Extract -> Route -> Proposal を生成する
- * パイプラインをここに実装する。現状は接続確認のみ。
+ * 一定間隔で、まだ Proposal が紐づいていない Source を解析し、
+ * Extract -> Route -> Proposal を実行する（status=pending で保存）。
+ * 承認・適用は Approval Queue（UI/API）側で行う。
  */
 
 import { createDb, createRepositories } from "@praxios/db";
+import { analyzePendingSources } from "@praxios/pipeline";
 
 const repos = createRepositories(createDb());
 
 async function tick(): Promise<void> {
-  const sources = await repos.sources.list();
-  const pending = await repos.proposals.list({ status: "pending" });
-  console.log(
-    `[worker] sources=${sources.length} pending_proposals=${pending.length} ` +
-      `(pipeline not implemented yet — Phase 3)`,
-  );
+  try {
+    const created = await analyzePendingSources(repos);
+    if (created > 0) {
+      console.log(`[worker] created ${created} proposal(s)`);
+    }
+  } catch (err) {
+    console.error("[worker] tick failed:", err);
+  }
 }
 
 const intervalMs = Number(process.env.WORKER_INTERVAL_MS ?? 10_000);
-console.log(`[worker] started (interval=${intervalMs}ms)`);
+const mode = process.env.ANTHROPIC_API_KEY ? "claude" : "heuristic";
+console.log(`[worker] started (interval=${intervalMs}ms, extractor=${mode})`);
 await tick();
 setInterval(() => {
   void tick();
