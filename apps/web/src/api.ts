@@ -1,4 +1,14 @@
-import type { Task } from "@praxios/core";
+import type { Source, Task } from "@praxios/core";
+
+export type SourceWithContent = Source & { content: string };
+
+export interface CreateSourceInput {
+  sourceType?: string;
+  sourceTitle?: string | null;
+  content: string;
+  sourceUrl?: string | null;
+  provider?: string | null;
+}
 
 const BASE = "/api";
 
@@ -32,5 +42,11 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify(body),
       }),
+  },
+  sources: {
+    list: () => http<Source[]>("/sources"),
+    get: (id: string) => http<SourceWithContent>(`/sources/${id}`),
+    create: (body: CreateSourceInput) =>
+      http<Source>("/sources", { method: "POST", body: JSON.stringify(body) }),
   },
 };

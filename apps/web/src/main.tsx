@@ -4,6 +4,8 @@ import ReactDOM from "react-dom/client";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { App } from "./App";
 import { ApprovalsPage } from "./pages/ApprovalsPage";
+import { SourceViewerPage } from "./pages/SourceViewerPage";
+import { SourcesPage } from "./pages/SourcesPage";
 import { TaskPage } from "./pages/TaskPage";
 import { TasksPage } from "./pages/TasksPage";
 import { WikiPage } from "./pages/WikiPage";
@@ -19,6 +21,8 @@ const router = createBrowserRouter([
       { index: true, element: <TasksPage /> },
       { path: "tasks", element: <TasksPage /> },
       { path: "tasks/:taskId", element: <TaskPage /> },
+      { path: "sources", element: <SourcesPage /> },
+      { path: "sources/:sourceId", element: <SourceViewerPage /> },
       { path: "approvals", element: <ApprovalsPage /> },
       { path: "wiki", element: <WikiPage /> },
     ],
