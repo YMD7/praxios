@@ -1,4 +1,18 @@
-import type { Proposal, Source, Task } from "@praxios/core";
+import type {
+  Proposal,
+  Source,
+  Task,
+  WikiLink,
+  WikiPage,
+} from "@praxios/core";
+
+export type WikiOutgoing = WikiLink & { toTitle: string | null };
+export type WikiBacklink = WikiLink & { fromTitle: string | null };
+export interface WikiPageDetail {
+  page: WikiPage;
+  outgoing: WikiOutgoing[];
+  backlinks: WikiBacklink[];
+}
 
 export type SourceWithContent = Source & { content: string };
 
@@ -64,6 +78,20 @@ export const api = {
     reject: (id: string, body: { reviewComment?: string } = {}) =>
       http<Proposal>(`/proposals/${id}/reject`, {
         method: "POST",
+        body: JSON.stringify(body),
+      }),
+  },
+  wiki: {
+    list: () => http<WikiPage[]>("/wiki"),
+    get: (id: string) => http<WikiPageDetail>(`/wiki/${id}`),
+    create: (body: { title: string; body?: string; tags?: string[] }) =>
+      http<WikiPage>("/wiki", { method: "POST", body: JSON.stringify(body) }),
+    update: (
+      id: string,
+      body: { title: string; body?: string; tags?: string[] },
+    ) =>
+      http<WikiPage>(`/wiki/${id}`, {
+        method: "PATCH",
         body: JSON.stringify(body),
       }),
   },

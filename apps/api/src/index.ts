@@ -5,6 +5,7 @@ import { repositories } from "./repos";
 import { proposalsRoutes } from "./routes/proposals";
 import { sourcesRoutes } from "./routes/sources";
 import { tasksRoutes } from "./routes/tasks";
+import { wikiRoutes } from "./routes/wiki";
 
 const app = new Hono();
 
@@ -13,6 +14,7 @@ app.get("/api/health", (c) => c.json({ ok: true }));
 app.route("/api/tasks", tasksRoutes(repositories));
 app.route("/api/sources", sourcesRoutes(repositories));
 app.route("/api/proposals", proposalsRoutes(repositories));
+app.route("/api/wiki", wikiRoutes(repositories));
 
 const port = Number(process.env.PORT ?? 8787);
 serve({ fetch: app.fetch, port });

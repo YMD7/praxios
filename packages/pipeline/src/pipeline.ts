@@ -16,6 +16,7 @@ import {
 } from "@praxios/core";
 import { readSourceContent } from "@praxios/db";
 import { extractProposals, type AiProposal } from "./ai";
+import { saveWikiPage } from "./wiki";
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -173,6 +174,23 @@ export async function applyProposal(
     return { taskId: task.id };
   }
 
-  // wiki_update_proposal の適用は Phase 4（applyWikiProposal）で実装する。
+  if (p.proposalKind === "wiki_update_proposal") {
+    const payload = wikiUpdateProposalPayloadSchema.parse(p.payload);
+    const page = await saveWikiPage(repos, {
+      pageId: payload.pageId,
+      title: payload.title,
+      body: payload.body,
+      tags: payload.tags,
+      proposedLinks: payload.proposedLinks,
+      sourceId: p.sourceIds[0] ?? null,
+    });
+    await repos.proposals.update(proposalId, {
+      status: "applied",
+      appliedAt: nowIso(),
+      destination: page.id,
+    });
+    return { wikiPageId: page.id };
+  }
+
   throw new Error(`apply not implemented for kind: ${p.proposalKind}`);
 }

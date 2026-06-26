@@ -9,6 +9,7 @@ import { SourcesPage } from "./pages/SourcesPage";
 import { TaskPage } from "./pages/TaskPage";
 import { TasksPage } from "./pages/TasksPage";
 import { WikiPage } from "./pages/WikiPage";
+import { WikiPageView } from "./pages/WikiPageView";
 import "./styles.css";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const router = createBrowserRouter([
       { path: "sources/:sourceId", element: <SourceViewerPage /> },
       { path: "approvals", element: <ApprovalsPage /> },
       { path: "wiki", element: <WikiPage /> },
+      { path: "wiki/:pageId", element: <WikiPageView /> },
     ],
   },
 ]);
