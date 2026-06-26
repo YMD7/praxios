@@ -23,6 +23,19 @@ apps/
   worker/ AI Worker
 ```
 
+## 実装済み機能（MVP）
+
+- Task List / Task Workspace（手動 CRUD、安定 URL）
+- Source 手動取り込み（ハッシュ + ファイル保存）と Source Viewer
+- Proposal パイプライン: Source → Extract → Route → Proposal → Approve → Apply
+  - AI 抽出は Claude（`claude-opus-4-8` / 構造化出力）
+  - `ANTHROPIC_API_KEY` 未設定時はヒューリスティック抽出にフォールバック
+- Approval Queue（承認/却下、承認で Task/Wiki に適用）
+- Wiki + wikilink（`[[PageId]]` 解決・backlink・未解決リンクの自動回復）
+
+外部連携（Slack/メール/Drive 等）は手動入力/モックのまま。Integration Layer の
+差し込み口のみ用意。
+
 ## セットアップ
 
 ```
@@ -41,5 +54,12 @@ pnpm dev:worker   # 別ターミナルで Worker
 - Web: http://localhost:5173
 - API: http://localhost:8787
 
+AI 抽出を有効にするには `ANTHROPIC_API_KEY` を設定する（未設定でも
+ヒューリスティック抽出で一連の流れは動作する）。
+
+```
+export ANTHROPIC_API_KEY=sk-ant-...
+```
+
 ローカルデータ（SQLite 本体・Source 正本）は `data/` に保存される
-（.gitignore 済み）。
+（.gitignore 済み）。リセットするには `rm -rf data` 後に `pnpm db:setup`。
