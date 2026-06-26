@@ -14,6 +14,7 @@ build
 # Data
 data/
 data.bak/
+data.bak2/
 *.sqlite
 *.sqlite3
 *.db
