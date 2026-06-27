@@ -143,6 +143,12 @@ describe("Praxios API validation", () => {
     expect(second.status).toBe(200);
     expect(firstBody.workspace.path).toBe(path.join(tempDir, ".praxios", "tasks", task.id));
     expect(secondBody.workspace.context).toContain("# Task Context");
+    expect(
+      fs.readFileSync(path.join(firstBody.workspace.path, "AGENTS.md"), "utf8")
+    ).toContain("praxios-agent-load-check");
+    expect(fs.readFileSync(path.join(firstBody.workspace.path, "CLAUDE.md"), "utf8")).toBe(
+      "@AGENTS.md\n"
+    );
   });
 
   it("lists sources attached to a task", async () => {

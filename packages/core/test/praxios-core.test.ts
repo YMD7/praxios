@@ -220,6 +220,8 @@ describe("PraxiosCore", () => {
 
     const first = core.getTaskWorkspace(task.id);
     const second = core.syncTaskWorkspace(task.id);
+    const agents = fs.readFileSync(path.join(first.path, "AGENTS.md"), "utf8");
+    const claude = fs.readFileSync(path.join(first.path, "CLAUDE.md"), "utf8");
 
     expect(first.path).toBe(path.join(tempDir, ".praxios", "tasks", task.id));
     expect(fs.existsSync(first.contextPath)).toBe(true);
@@ -227,6 +229,9 @@ describe("PraxiosCore", () => {
     expect(second.contextPath).toBe(first.contextPath);
     expect(second.context).toContain("# Task Context");
     expect(second.context).toContain("## Accumulated Context");
+    expect(agents).toContain("praxios-agent-load-check");
+    expect(agents).toContain("必ず context.md を読む");
+    expect(claude).toBe("@AGENTS.md\n");
   });
 
   it("projects approved task context proposals into context.md", () => {

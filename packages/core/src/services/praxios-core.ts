@@ -79,6 +79,21 @@ const initialTaskContext = `# Task Context
 まだ承認済み Context はありません。
 `;
 
+const initialAgentInstructions = `# AGENTS.md
+
+## 検証用コンテキスト
+
+Praxios AGENTS.md 読み込み確認キーワード: praxios-agent-load-check
+
+AIに「praxios-agent-load-check について知ってる？」と質問されたら、
+この AGENTS.md が読み込まれていることを伝える。
+
+## Task Context
+
+このタスクディレクトリで作業を始める前に、必ず context.md を読む。
+context.md を、この Task の正規コンテキストとして扱う。
+`;
+
 const emptyLatestUpdate = "まだ更新はありません。";
 const emptyAccumulatedContext = "まだ承認済み Context はありません。";
 
@@ -464,6 +479,8 @@ export class PraxiosCore {
     const workspacePath = path.join(this.config.workspaceRoot, ".praxios", "tasks", taskId);
     const sourcesPath = path.join(workspacePath, "sources");
     const contextPath = path.join(workspacePath, "context.md");
+    const agentsPath = path.join(workspacePath, "AGENTS.md");
+    const claudePath = path.join(workspacePath, "CLAUDE.md");
 
     fs.mkdirSync(sourcesPath, { recursive: true });
 
@@ -475,6 +492,14 @@ export class PraxiosCore {
       if (normalized !== current) {
         fs.writeFileSync(contextPath, normalized, "utf8");
       }
+    }
+
+    if (!fs.existsSync(agentsPath)) {
+      fs.writeFileSync(agentsPath, initialAgentInstructions, "utf8");
+    }
+
+    if (!fs.existsSync(claudePath)) {
+      fs.writeFileSync(claudePath, "@AGENTS.md\n", "utf8");
     }
 
     return {
