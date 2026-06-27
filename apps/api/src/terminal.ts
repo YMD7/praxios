@@ -140,7 +140,7 @@ function spawnAgent(session: TerminalSession) {
     session.ptyProcess = pty.spawn(shell, ["-lc", `exec ${session.agent.command}`], {
       cols: session.pendingSize.cols,
       cwd: session.cwd,
-      env: cleanEnv(),
+      env: buildTerminalEnv(),
       name: "xterm-256color",
       rows: session.pendingSize.rows
     });
@@ -229,12 +229,21 @@ function normalizeMessage(message: RawData, isBinary: boolean): string {
   return isBinary ? "" : "";
 }
 
-function cleanEnv(): Record<string, string> {
+export function buildTerminalEnv(
+  sourceEnv: NodeJS.ProcessEnv = process.env
+): Record<string, string> {
   const env: Record<string, string> = {};
-  for (const [key, value] of Object.entries(process.env)) {
+  for (const [key, value] of Object.entries(sourceEnv)) {
+    if (key === "NO_COLOR") {
+      continue;
+    }
     if (value !== undefined) {
       env[key] = value;
     }
   }
+  env.TERM = "xterm-256color";
+  env.COLORTERM = "truecolor";
+  env.CLICOLOR = "1";
+  env.FORCE_COLOR = "1";
   return env;
 }
