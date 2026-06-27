@@ -7,7 +7,7 @@ import { seedIfEmpty } from "./seed";
 import { approveProposal, rejectProposal } from "./services/approvalApply";
 import { generateMockProposals } from "./services/mockProposal";
 import { saveSource, readSourceContent } from "./services/sourceStore";
-import { refreshWikiLinks, normalizePageId } from "./services/wikiLinks";
+import { refreshWikiGraph, normalizePageId } from "./services/wikiLinks";
 
 ensureSchema();
 seedIfEmpty();
@@ -166,7 +166,7 @@ app.post("/api/wiki", async (c) => {
     body: String(body.body ?? ""),
     tags: Array.isArray(body.tags) ? body.tags.map(String) : undefined
   });
-  refreshWikiLinks(pageId, String(body.body ?? ""));
+  refreshWikiGraph();
   return c.json(page, 201);
 });
 
@@ -188,7 +188,7 @@ app.put("/api/wiki/:pageId", async (c) => {
     body: String(body.body ?? ""),
     tags: Array.isArray(body.tags) ? body.tags.map(String) : undefined
   });
-  refreshWikiLinks(pageId, String(body.body ?? ""));
+  refreshWikiGraph();
   return c.json(page);
 });
 

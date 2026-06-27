@@ -32,3 +32,8 @@ export function refreshWikiLinks(pageId: string, body: string) {
   repository.replaceWikiLinks(pageId, extractWikiLinks(body));
 }
 
+export function refreshWikiGraph() {
+  for (const page of repository.listWikiPages()) {
+    repository.replaceWikiLinks(page.id, extractWikiLinks(page.body));
+  }
+}
