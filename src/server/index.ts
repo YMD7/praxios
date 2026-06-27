@@ -164,7 +164,7 @@ app.post("/api/wiki", async (c) => {
     id: pageId,
     title: String(body.title ?? pageId),
     body: String(body.body ?? ""),
-    tags: Array.isArray(body.tags) ? body.tags.map(String) : []
+    tags: Array.isArray(body.tags) ? body.tags.map(String) : undefined
   });
   refreshWikiLinks(pageId, String(body.body ?? ""));
   return c.json(page, 201);
