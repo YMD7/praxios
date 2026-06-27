@@ -1,11 +1,10 @@
-import { Terminal, useTerminal } from "@wterm/react";
-import type { WTerm } from "@wterm/dom";
+import { FitAddon } from "@xterm/addon-fit";
+import { Terminal as XtermTerminal } from "@xterm/xterm";
 import {
   forwardRef,
   useCallback,
   useEffect,
   useImperativeHandle,
-  useMemo,
   useRef,
   useState
 } from "react";
@@ -43,11 +42,12 @@ function getTerminalWebSocketUrl(agent: AgentId, tabId: string, taskId?: string)
 
 export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>(
   function WtermTerminal({ agent, onStatusChange, tabId, taskId }, ref) {
-    const { ref: terminalRef, write, focus } = useTerminal();
-    const [terminal, setTerminal] = useState<WTerm | null>(null);
-    const inputPositionCleanupRef = useRef<(() => void) | null>(null);
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const terminalRef = useRef<XtermTerminal | null>(null);
+    const fitAddonRef = useRef<FitAddon | null>(null);
     const socketRef = useRef<WebSocket | null>(null);
     const lastSizeRef = useRef<{ cols: number; rows: number } | null>(null);
+    const [terminalReady, setTerminalReady] = useState(false);
 
     const setStatus = useCallback(
       (status: TerminalStatus) => {
@@ -64,16 +64,13 @@ export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>
       }
     }, []);
 
-    const sendData = useCallback(
-      (data: string) => {
-        const socket = socketRef.current;
-        if (socket?.readyState === WebSocket.OPEN) {
-          socket.send(data);
-          focus();
-        }
-      },
-      [focus]
-    );
+    const sendData = useCallback((data: string) => {
+      const socket = socketRef.current;
+      if (socket?.readyState === WebSocket.OPEN) {
+        socket.send(data);
+        terminalRef.current?.focus();
+      }
+    }, []);
 
     useImperativeHandle(
       ref,
@@ -90,33 +87,110 @@ export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>
     );
 
     useEffect(() => {
-      if (!terminal) return;
+      const container = containerRef.current;
+      if (!container) return undefined;
+
+      const terminal = new XtermTerminal({
+        cols: 100,
+        cursorBlink: true,
+        fontFamily: "Menlo, Consolas, 'DejaVu Sans Mono', 'Courier New', monospace",
+        fontSize: 14,
+        lineHeight: 1.2,
+        rows: 30,
+        scrollback: 1000,
+        theme: {
+          background: "#111317",
+          black: "#272822",
+          blue: "#66d9ef",
+          brightBlack: "#75715e",
+          brightBlue: "#66d9ef",
+          brightCyan: "#a1efe4",
+          brightGreen: "#a6e22e",
+          brightMagenta: "#ae81ff",
+          brightRed: "#f92672",
+          brightWhite: "#f9f8f5",
+          brightYellow: "#f4bf75",
+          cursor: "#f8f8f0",
+          cyan: "#a1efe4",
+          foreground: "#f8f8f2",
+          green: "#a6e22e",
+          magenta: "#ae81ff",
+          red: "#f92672",
+          white: "#f8f8f2",
+          yellow: "#f4bf75"
+        }
+      });
+      const fitAddon = new FitAddon();
+      terminal.loadAddon(fitAddon);
+      terminal.open(container);
+
+      const fit = () => {
+        fitAddon.fit();
+        lastSizeRef.current = { cols: terminal.cols, rows: terminal.rows };
+      };
+      const fitSoon = () => window.requestAnimationFrame(fit);
+      const resizeObserver = new ResizeObserver(fitSoon);
+      resizeObserver.observe(container);
+
+      const dataDisposable = terminal.onData(sendData);
+      const binaryDisposable = terminal.onBinary(sendData);
+      const resizeDisposable = terminal.onResize(({ cols, rows }) => {
+        lastSizeRef.current = { cols, rows };
+        const socket = socketRef.current;
+        if (socket?.readyState === WebSocket.OPEN) {
+          socket.send(`\x1b[RESIZE:${cols};${rows}]`);
+        }
+      });
+
+      terminalRef.current = terminal;
+      fitAddonRef.current = fitAddon;
+      fit();
+      terminal.focus();
+      setTerminalReady(true);
+
+      return () => {
+        setTerminalReady(false);
+        dataDisposable.dispose();
+        binaryDisposable.dispose();
+        resizeDisposable.dispose();
+        resizeObserver.disconnect();
+        fitAddon.dispose();
+        terminal.dispose();
+        fitAddonRef.current = null;
+        terminalRef.current = null;
+      };
+    }, [sendData]);
+
+    useEffect(() => {
+      const terminal = terminalRef.current;
+      if (!terminalReady || !terminal) return undefined;
 
       closeSocket();
       setStatus("connecting");
-      write(`\r\n\x1b[90m[connecting to ${agent}]\x1b[0m\r\n`);
+      terminal.write(`\r\n\x1b[90m[connecting to ${agent}]\x1b[0m\r\n`);
 
       const socket = new WebSocket(getTerminalWebSocketUrl(agent, tabId, taskId));
       socketRef.current = socket;
 
       socket.onopen = () => {
         setStatus("connected");
+        fitAddonRef.current?.fit();
         const size = lastSizeRef.current ?? { cols: terminal.cols, rows: terminal.rows };
         socket.send(`\x1b[RESIZE:${size.cols};${size.rows}]`);
-        focus();
+        terminal.focus();
       };
 
       socket.onmessage = (event: MessageEvent) => {
         if (typeof event.data === "string") {
-          write(event.data);
+          terminal.write(event.data);
         } else if (event.data instanceof Blob) {
-          event.data.text().then((text) => write(text)).catch(() => undefined);
+          event.data.text().then((text) => terminal.write(text)).catch(() => undefined);
         }
       };
 
       socket.onerror = () => {
         setStatus("error");
-        write("\r\n\x1b[31m[terminal connection error]\x1b[0m\r\n");
+        terminal.write("\r\n\x1b[31m[terminal connection error]\x1b[0m\r\n");
       };
 
       socket.onclose = () => {
@@ -124,109 +198,16 @@ export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>
           socketRef.current = null;
         }
         setStatus("closed");
-        write("\r\n\x1b[90m[session ended]\x1b[0m\r\n");
+        terminal.write("\r\n\x1b[90m[session ended]\x1b[0m\r\n");
       };
 
       return () => {
         socket.close();
       };
-    }, [agent, closeSocket, focus, setStatus, tabId, taskId, terminal, write]);
+    }, [agent, closeSocket, setStatus, tabId, taskId, terminalReady]);
 
     useEffect(() => closeSocket, [closeSocket]);
 
-    const handleReady = useCallback((instance: WTerm) => {
-      inputPositionCleanupRef.current?.();
-      inputPositionCleanupRef.current = installTerminalInputPositioning(instance) ?? null;
-      setTerminal(instance);
-      lastSizeRef.current = { cols: instance.cols, rows: instance.rows };
-    }, []);
-
-    useEffect(
-      () => () => {
-        inputPositionCleanupRef.current?.();
-        inputPositionCleanupRef.current = null;
-      },
-      []
-    );
-
-    const handleData = useCallback((data: string) => sendData(data), [sendData]);
-
-    const handleResize = useCallback((cols: number, rows: number) => {
-      lastSizeRef.current = { cols, rows };
-      const socket = socketRef.current;
-      if (socket?.readyState === WebSocket.OPEN) {
-        socket.send(`\x1b[RESIZE:${cols};${rows}]`);
-      }
-    }, []);
-
-    const terminalStyle = useMemo(
-      () => ({
-        borderRadius: 0,
-        boxShadow: "none",
-        height: "100%",
-        minHeight: 0,
-        padding: 0
-      }),
-      []
-    );
-
-    return (
-      <Terminal
-        autoResize
-        className="h-full min-h-0 w-full bg-[#111317]"
-        cols={100}
-        cursorBlink
-        onData={handleData}
-        onReady={handleReady}
-        onResize={handleResize}
-        ref={terminalRef}
-        rows={30}
-        style={terminalStyle}
-        theme="monokai"
-      />
-    );
+    return <div className="h-full min-h-0 w-full bg-[#111317]" ref={containerRef} />;
   }
 );
-
-function installTerminalInputPositioning(terminal: WTerm) {
-  const textarea = terminal.element.querySelector("textarea");
-  if (!textarea) return undefined;
-
-  textarea.removeAttribute("aria-hidden");
-  textarea.setAttribute("aria-label", "Terminal input");
-
-  const positionTextarea = () => {
-    const cursor = terminal.element.querySelector(".term-cursor");
-    const hostRect = terminal.element.getBoundingClientRect();
-    const cursorRect = cursor?.getBoundingClientRect();
-    const left = cursorRect ? cursorRect.left - hostRect.left + terminal.element.scrollLeft : 12;
-    const top = cursorRect ? cursorRect.top - hostRect.top + terminal.element.scrollTop : 12;
-    const width = cursorRect?.width || 8;
-    const height = cursorRect?.height || 17;
-
-    const style = textarea.style;
-    style.left = `${Math.max(0, left)}px`;
-    style.top = `${Math.max(0, top)}px`;
-    style.width = `${Math.max(1, width)}px`;
-    style.height = `${Math.max(1, height)}px`;
-  };
-
-  const observer = new MutationObserver(positionTextarea);
-  observer.observe(terminal.element, {
-    attributes: true,
-    childList: true,
-    subtree: true
-  });
-
-  positionTextarea();
-  textarea.addEventListener("focus", positionTextarea);
-  terminal.element.addEventListener("scroll", positionTextarea);
-  window.addEventListener("resize", positionTextarea);
-
-  return () => {
-    observer.disconnect();
-    textarea.removeEventListener("focus", positionTextarea);
-    terminal.element.removeEventListener("scroll", positionTextarea);
-    window.removeEventListener("resize", positionTextarea);
-  };
-}

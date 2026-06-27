@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "@wterm/react/css";
+@import "@xterm/xterm/css/xterm.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -68,6 +68,16 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+}
+
+.xterm {
+  height: 100%;
+  padding: 0;
+}
+
+.xterm .xterm-viewport,
+.xterm .xterm-screen {
+  height: 100%;
 }
 
 button,
