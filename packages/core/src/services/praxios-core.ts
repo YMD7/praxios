@@ -360,6 +360,7 @@ export class PraxiosCore {
     const input = upsertWikiPageSchema.parse(rawInput);
     const page = this.repo.upsertWikiPage(input);
     this.syncWikiLinks(page.pageId, page.body, sourceId);
+    this.repo.resolveWikiLinksToPage(page.pageId);
 
     this.repo.createAuditEvent({
       actor: "local-user",

@@ -68,4 +68,29 @@ describe("PraxiosCore", () => {
     expect(links.outgoing[0]?.toPageId).toBe("legal-review");
     expect(links.outgoing[0]?.status).toBe("unresolved");
   });
+
+  it("resolves incoming wiki links when a target page is created later", () => {
+    core.upsertWikiPage({
+      pageId: "contract-process",
+      title: "Contract process",
+      body: "Use [[Legal Review]] before sending documents.",
+      tags: []
+    });
+
+    expect(core.listWikiLinks("contract-process").outgoing[0]?.status).toBe("unresolved");
+
+    core.upsertWikiPage({
+      pageId: "legal-review",
+      title: "Legal Review",
+      body: "Review legal risk before sending.",
+      tags: []
+    });
+
+    const sourceLinks = core.listWikiLinks("contract-process");
+    const targetLinks = core.listWikiLinks("legal-review");
+
+    expect(sourceLinks.outgoing[0]?.status).toBe("resolved");
+    expect(targetLinks.backlinks[0]?.fromPageId).toBe("contract-process");
+    expect(targetLinks.backlinks[0]?.status).toBe("resolved");
+  });
 });

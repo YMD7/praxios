@@ -499,6 +499,17 @@ export class PraxiosRepository {
     }
   }
 
+  resolveWikiLinksToPage(pageId: string): void {
+    this.db
+      .update(wikiLinks)
+      .set({
+        status: "resolved",
+        updatedAt: nowIso()
+      })
+      .where(eq(wikiLinks.toPageId, pageId))
+      .run();
+  }
+
   createAuditEvent(input: {
     actor: string;
     eventType: string;
