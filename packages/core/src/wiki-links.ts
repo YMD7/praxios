@@ -6,7 +6,12 @@ export interface ParsedWikiLink {
 const wikiLinkPattern = /\[\[([^\]|\n]+)(?:\|([^\]\n]+))?\]\]/g;
 
 export function normalizePageId(value: string): string {
-  return value.trim().replace(/\s+/g, "-");
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9ぁ-んァ-ヶ一-龠ー]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 export function extractWikiLinks(body: string): ParsedWikiLink[] {
@@ -33,11 +38,5 @@ export function extractWikiLinks(body: string): ParsedWikiLink[] {
 }
 
 export function createPageIdFromTitle(title: string): string {
-  return normalizePageId(
-    title
-      .toLowerCase()
-      .replace(/[^a-z0-9ぁ-んァ-ヶ一-龠ー]+/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "")
-  );
+  return normalizePageId(title);
 }

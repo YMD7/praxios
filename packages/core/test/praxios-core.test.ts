@@ -65,7 +65,7 @@ describe("PraxiosCore", () => {
     expect(page?.title).toBe("Contract process");
 
     const links = core.listWikiLinks("contract-process");
-    expect(links.outgoing[0]?.toPageId).toBe("Legal-Review");
+    expect(links.outgoing[0]?.toPageId).toBe("legal-review");
     expect(links.outgoing[0]?.status).toBe("unresolved");
   });
 });
