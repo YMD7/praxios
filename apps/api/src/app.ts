@@ -34,7 +34,20 @@ async function parseRequiredBody<TSchema extends z.ZodTypeAny>(c: Context, schem
 }
 
 async function parseOptionalBody<TSchema extends z.ZodTypeAny>(c: Context, schema: TSchema) {
-  const body = await c.req.json().catch(() => ({}));
+  const text = await c.req.text().catch(() => "");
+  let body: unknown = {};
+
+  if (text.trim().length > 0) {
+    try {
+      body = JSON.parse(text) as unknown;
+    } catch {
+      return {
+        ok: false as const,
+        response: c.json({ error: "invalid_json", message: "Malformed JSON body" }, 400)
+      };
+    }
+  }
+
   const parsed = schema.safeParse(body);
 
   if (!parsed.success) {

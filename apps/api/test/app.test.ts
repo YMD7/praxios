@@ -40,6 +40,17 @@ describe("Praxios API validation", () => {
     expect(await response.json()).toMatchObject({ error: "invalid_request" });
   });
 
+  it("returns 400 for malformed optional review bodies", async () => {
+    const response = await app.request("/proposals/proposal-1/apply", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{"
+    });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ error: "invalid_json" });
+  });
+
   it("returns 404 when ingesting a source for an unknown task", async () => {
     const response = await app.request("/sources", {
       method: "POST",
