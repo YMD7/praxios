@@ -118,7 +118,6 @@ export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>
       const socket = socketRef.current;
       if (socket?.readyState === WebSocket.OPEN) {
         socket.send(data);
-        terminalRef.current?.focus();
       }
     }, []);
 
@@ -175,7 +174,6 @@ export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>
       terminalRef.current = terminal;
       fitAddonRef.current = fitAddon;
       fit();
-      terminal.focus();
       setTerminalReady(true);
 
       return () => {
@@ -214,7 +212,6 @@ export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>
         fitAddonRef.current?.fit();
         const size = lastSizeRef.current ?? { cols: terminal.cols, rows: terminal.rows };
         socket.send(`\x1b[RESIZE:${size.cols};${size.rows}]`);
-        terminal.focus();
       };
 
       socket.onmessage = (event: MessageEvent) => {
@@ -242,6 +239,20 @@ export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>
         socket.close();
       };
     }, [agent, closeSocket, setStatus, tabId, taskId, terminalReady]);
+
+    useEffect(() => {
+      const onPointerDown = (event: PointerEvent) => {
+        const container = containerRef.current;
+        const terminal = terminalRef.current;
+        if (!container || !terminal || !(event.target instanceof Node)) return;
+        if (!container.contains(event.target)) {
+          terminal.blur();
+        }
+      };
+
+      document.addEventListener("pointerdown", onPointerDown, true);
+      return () => document.removeEventListener("pointerdown", onPointerDown, true);
+    }, []);
 
     useEffect(() => closeSocket, [closeSocket]);
 

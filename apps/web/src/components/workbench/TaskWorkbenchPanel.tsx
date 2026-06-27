@@ -1,19 +1,22 @@
 import type { Proposal, Task } from "@praxios/core";
 import { Check, FileText, RefreshCw, SendHorizonal, X } from "lucide-react";
+import type {
+  KeyboardEvent as ReactKeyboardEvent,
+  PointerEvent as ReactPointerEvent,
+  ReactNode
+} from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgentTerminalPanel } from "@/components/terminal/AgentTerminalPanel";
 import type { AgentTerminalPanelHandle } from "@/components/terminal/AgentTerminalPanel";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup
-} from "@/components/ui/resizable";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { api, type TaskWorkspaceInfo } from "@/api";
 import type { TaskWorkbenchTab } from "./types";
 
 const shareSnippet = "Context was updated for this task.";
+const defaultContextPercent = 42;
+const minContextPaneWidth = 320;
+const minAiPaneWidth = 420;
 
 export function TaskWorkbenchPanel({
   onRegisterTerminal,
@@ -109,45 +112,179 @@ export function TaskWorkbenchPanel({
   }
 
   return (
-    <ResizablePanelGroup
-      autoSaveId={`praxios-task-workbench-${tab.taskId}`}
-      className="h-full min-h-0"
-      direction="horizontal"
-    >
-      <ResizablePanel
-        className="min-w-[320px]"
-        defaultSize="42%"
-        id={`${tab.id}:context`}
-        maxSize="60%"
-        minSize="320px"
-      >
-        <ContextPane
-          contextCount={contextCount}
-          contextUpdated={contextUpdated}
-          error={error}
-          loading={loading}
-          onApplyProposal={(proposalId) => void applyProposal(proposalId)}
-          onRefresh={() => void load()}
-          onRejectProposal={(proposalId) => void rejectProposal(proposalId)}
-          onShareToAi={shareToAi}
-          pendingApprovalCount={pendingApprovalCount}
-          pendingContextProposals={pendingContextProposals}
-          relatedSourceCount={relatedSourceCount}
-          task={task}
-          workspace={workspace}
-        />
-      </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel
-        className="min-w-[420px]"
-        defaultSize="58%"
-        id={`${tab.id}:ai`}
-        minSize="420px"
-      >
-        <AgentTerminalPanel ref={terminalRef} tabId={tab.id} taskId={tab.taskId} />
-      </ResizablePanel>
-    </ResizablePanelGroup>
+    <TaskSplitLayout storageKey={`praxios-task-workbench-${tab.taskId}`}>
+      {{
+        context: (
+          <div className="h-full min-h-0">
+            <ContextPane
+              contextCount={contextCount}
+              contextUpdated={contextUpdated}
+              error={error}
+              loading={loading}
+              onApplyProposal={(proposalId) => void applyProposal(proposalId)}
+              onRefresh={() => void load()}
+              onRejectProposal={(proposalId) => void rejectProposal(proposalId)}
+              onShareToAi={shareToAi}
+              pendingApprovalCount={pendingApprovalCount}
+              pendingContextProposals={pendingContextProposals}
+              relatedSourceCount={relatedSourceCount}
+              task={task}
+              workspace={workspace}
+            />
+          </div>
+        ),
+        ai: (
+          <div className="h-full min-h-0 min-w-0 overflow-hidden">
+            <AgentTerminalPanel ref={terminalRef} tabId={tab.id} taskId={tab.taskId} />
+          </div>
+        )
+      }}
+    </TaskSplitLayout>
   );
+}
+
+function TaskSplitLayout({
+  children,
+  storageKey
+}: {
+  children: { context: ReactNode; ai: ReactNode };
+  storageKey: string;
+}) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [contextPercent, setContextPercent] = useState(() =>
+    readSavedContextPercent(storageKey)
+  );
+
+  useEffect(() => {
+    setContextPercent(readSavedContextPercent(storageKey));
+  }, [storageKey]);
+
+  const updateContextWidth = useCallback(
+    (nextContextPx: number, containerWidth: number) => {
+      if (containerWidth <= 0) return;
+      const clampedPx = clampContextPaneWidth(nextContextPx, containerWidth);
+      const nextPercent = (clampedPx / containerWidth) * 100;
+      setContextPercent(nextPercent);
+      saveContextPercent(storageKey, nextPercent);
+    },
+    [storageKey]
+  );
+
+  const onHandlePointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (event.button !== 0) return;
+
+      const container = containerRef.current;
+      if (!container) return;
+
+      event.preventDefault();
+      const rect = container.getBoundingClientRect();
+      const startX = event.clientX;
+      const startContextWidth = rect.width * (contextPercent / 100);
+
+      const onPointerMove = (moveEvent: PointerEvent) => {
+        updateContextWidth(startContextWidth + moveEvent.clientX - startX, rect.width);
+      };
+      const onPointerUp = () => {
+        document.removeEventListener("pointermove", onPointerMove);
+        document.removeEventListener("pointerup", onPointerUp);
+      };
+
+      document.addEventListener("pointermove", onPointerMove);
+      document.addEventListener("pointerup", onPointerUp, { once: true });
+    },
+    [contextPercent, updateContextWidth]
+  );
+
+  const onHandleKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      const container = containerRef.current;
+      if (!container) return;
+
+      const currentWidth = container.clientWidth * (contextPercent / 100);
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        updateContextWidth(currentWidth - 40, container.clientWidth);
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        updateContextWidth(currentWidth + 40, container.clientWidth);
+      } else if (event.key === "Home") {
+        event.preventDefault();
+        updateContextWidth(minContextPaneWidth, container.clientWidth);
+      } else if (event.key === "End") {
+        event.preventDefault();
+        updateContextWidth(container.clientWidth - minAiPaneWidth, container.clientWidth);
+      }
+    },
+    [contextPercent, updateContextWidth]
+  );
+
+  return (
+    <div
+      className="grid h-full min-h-0"
+      ref={containerRef}
+      style={{
+        gridTemplateColumns: `minmax(${minContextPaneWidth}px, ${contextPercent}%) 8px minmax(${minAiPaneWidth}px, 1fr)`
+      }}
+    >
+      <div className="min-w-[320px] overflow-hidden">
+        {children.context}
+      </div>
+      <div
+        aria-label="Resize task panes"
+        aria-orientation="vertical"
+        aria-valuemax={100}
+        aria-valuemin={0}
+        aria-valuenow={Math.round(contextPercent)}
+        className="relative z-10 flex cursor-col-resize items-center justify-center bg-border outline-none hover:bg-ring/40 focus-visible:ring-2 focus-visible:ring-ring"
+        onKeyDown={onHandleKeyDown}
+        onPointerDown={onHandlePointerDown}
+        role="separator"
+        tabIndex={0}
+      >
+        <div className="h-8 w-1 rounded-full bg-muted-foreground/60" />
+      </div>
+      <div className="min-w-[420px] overflow-hidden">
+        {children.ai}
+      </div>
+    </div>
+  );
+}
+
+function readSavedContextPercent(storageKey: string) {
+  try {
+    const value = localStorage.getItem(storageKey);
+    if (!value) return defaultContextPercent;
+    const parsed = JSON.parse(value) as unknown;
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      "contextPercent" in parsed &&
+      typeof parsed.contextPercent === "number"
+    ) {
+      return clampContextPercent(parsed.contextPercent);
+    }
+  } catch {
+    return defaultContextPercent;
+  }
+
+  return defaultContextPercent;
+}
+
+function saveContextPercent(storageKey: string, contextPercent: number) {
+  localStorage.setItem(
+    storageKey,
+    JSON.stringify({ contextPercent: clampContextPercent(contextPercent) })
+  );
+}
+
+function clampContextPaneWidth(contextPaneWidth: number, containerWidth: number) {
+  const maxContextPaneWidth = Math.max(minContextPaneWidth, containerWidth - minAiPaneWidth);
+  return Math.min(Math.max(contextPaneWidth, minContextPaneWidth), maxContextPaneWidth);
+}
+
+function clampContextPercent(contextPercent: number) {
+  return Math.min(Math.max(contextPercent, 20), 70);
 }
 
 function ContextPane({
