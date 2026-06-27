@@ -9,6 +9,7 @@
  */
 
 import {
+  nowIso,
   taskProposalPayloadSchema,
   wikiUpdateProposalPayloadSchema,
   type Proposal,
@@ -17,10 +18,6 @@ import {
 import { readSourceContent } from "@praxios/db";
 import { extractProposals, type AiProposal } from "./ai";
 import { saveWikiPage } from "./wiki";
-
-function nowIso(): string {
-  return new Date().toISOString();
-}
 
 const useAi = (): boolean => Boolean(process.env.ANTHROPIC_API_KEY);
 

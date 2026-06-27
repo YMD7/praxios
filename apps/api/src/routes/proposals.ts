@@ -2,14 +2,11 @@ import { Hono } from "hono";
 import { z } from "zod";
 import {
   PROPOSAL_STATUSES,
+  nowIso,
   payloadSchemaForKind,
   type Repositories,
 } from "@praxios/core";
 import { applyProposal } from "@praxios/pipeline";
-
-function nowIso(): string {
-  return new Date().toISOString();
-}
 
 const reviewSchema = z.object({
   payload: z.record(z.unknown()).optional(),
