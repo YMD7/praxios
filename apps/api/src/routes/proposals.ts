@@ -34,6 +34,14 @@ export function proposalsRoutes(repos: Repositories) {
     const parsed = reviewSchema.safeParse(await c.req.json().catch(() => ({})));
     if (!parsed.success) return c.json({ error: parsed.error.flatten() }, 400);
 
+    // pending のときだけ承認・適用する。applied/rejected を再承認すると
+    // applyProposal が再実行され、タスクや Wiki ページが重複生成されるため。
+    const current = await repos.proposals.get(id);
+    if (!current) return c.json({ error: "not_found" }, 404);
+    if (current.status !== "pending") {
+      return c.json({ error: "not_pending", status: current.status }, 409);
+    }
+
     const updated = await repos.proposals.update(id, {
       status: "approved",
       reviewedAt: nowIso(),
