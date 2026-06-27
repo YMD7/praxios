@@ -1,6 +1,10 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { PROPOSAL_STATUSES, type Repositories } from "@praxios/core";
+import {
+  PROPOSAL_STATUSES,
+  payloadSchemaForKind,
+  type Repositories,
+} from "@praxios/core";
 import { applyProposal } from "@praxios/pipeline";
 
 function nowIso(): string {
@@ -42,14 +46,25 @@ export function proposalsRoutes(repos: Repositories) {
       return c.json({ error: "not_pending", status: current.status }, 409);
     }
 
+    // 編集された payload は、適用前に種別スキーマで検証する。
+    // （適用時にしか検証しないと、不正な payload で適用が失敗し提案が固着する）
+    let editedPayload: Record<string, unknown> | undefined;
+    if (parsed.data.payload) {
+      const schema = payloadSchemaForKind(current.proposalKind);
+      const result = schema?.safeParse(parsed.data.payload);
+      if (result && !result.success) {
+        return c.json({ error: result.error.flatten() }, 400);
+      }
+      editedPayload = (result?.data ??
+        parsed.data.payload) as Record<string, unknown>;
+    }
+
     const updated = await repos.proposals.update(id, {
       status: "approved",
       reviewedAt: nowIso(),
       reviewerId: "local-user",
       reviewComment: parsed.data.reviewComment ?? null,
-      ...(parsed.data.payload
-        ? { payload: parsed.data.payload as Record<string, unknown> }
-        : {}),
+      ...(editedPayload ? { payload: editedPayload } : {}),
     });
     if (!updated) return c.json({ error: "not_found" }, 404);
 

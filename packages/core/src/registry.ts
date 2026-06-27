@@ -82,3 +82,13 @@ export const DEFAULT_PROPOSAL_DEFINITIONS: ProposalDefinition[] = [
     approvalPolicy: "always",
   },
 ];
+
+/** Proposal 種別に対応する payload スキーマを返す（未定義なら null）。 */
+export function payloadSchemaForKind(
+  kind: ProposalKind,
+): z.ZodTypeAny | null {
+  return (
+    DEFAULT_PROPOSAL_DEFINITIONS.find((d) => d.proposalKind === kind)?.schema ??
+    null
+  );
+}
