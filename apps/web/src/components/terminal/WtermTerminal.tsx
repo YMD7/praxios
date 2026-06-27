@@ -1,5 +1,6 @@
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal as XtermTerminal } from "@xterm/xterm";
+import type { ITheme } from "@xterm/xterm";
 import {
   forwardRef,
   useCallback,
@@ -8,12 +9,58 @@ import {
   useRef,
   useState
 } from "react";
+import { useSystemColorScheme, type SystemColorScheme } from "@/lib/use-system-theme";
 import type { AgentId } from "./types";
 
 type TerminalStatus = "idle" | "connecting" | "connected" | "closed" | "error";
 
 const closeCommand = "\x1b[TERMINAL:CLOSE]";
 const apiBase = import.meta.env.VITE_API_URL ?? "/api";
+
+const terminalThemes: Record<SystemColorScheme, ITheme> = {
+  light: {
+    background: "#f8fafc",
+    black: "#1f2937",
+    blue: "#2458a6",
+    brightBlack: "#6b7280",
+    brightBlue: "#1d4ed8",
+    brightCyan: "#0e7490",
+    brightGreen: "#15803d",
+    brightMagenta: "#7c3aed",
+    brightRed: "#b42318",
+    brightWhite: "#ffffff",
+    brightYellow: "#a16207",
+    cursor: "#1f5f46",
+    cyan: "#047481",
+    foreground: "#1f2937",
+    green: "#1f7a4f",
+    magenta: "#6d28d9",
+    red: "#b42318",
+    white: "#e5e7eb",
+    yellow: "#9a6700"
+  },
+  dark: {
+    background: "#0d1110",
+    black: "#1f2723",
+    blue: "#76b7ff",
+    brightBlack: "#75837c",
+    brightBlue: "#9ccaff",
+    brightCyan: "#8ce3d1",
+    brightGreen: "#93e6a1",
+    brightMagenta: "#d0b3ff",
+    brightRed: "#ff8b80",
+    brightWhite: "#f5fbf7",
+    brightYellow: "#f4d58d",
+    cursor: "#edf5ef",
+    cyan: "#75d8c8",
+    foreground: "#eef7f1",
+    green: "#7bd88f",
+    magenta: "#c8a5ff",
+    red: "#ff8b80",
+    white: "#dce8df",
+    yellow: "#efc56f"
+  }
+};
 
 export interface WtermTerminalHandle {
   closeSession: () => void;
@@ -48,6 +95,9 @@ export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>
     const socketRef = useRef<WebSocket | null>(null);
     const lastSizeRef = useRef<{ cols: number; rows: number } | null>(null);
     const [terminalReady, setTerminalReady] = useState(false);
+    const colorScheme = useSystemColorScheme();
+    const terminalTheme = terminalThemes[colorScheme];
+    const initialTerminalThemeRef = useRef(terminalTheme);
 
     const setStatus = useCallback(
       (status: TerminalStatus) => {
@@ -98,27 +148,7 @@ export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>
         lineHeight: 1.2,
         rows: 30,
         scrollback: 1000,
-        theme: {
-          background: "#111317",
-          black: "#272822",
-          blue: "#66d9ef",
-          brightBlack: "#75715e",
-          brightBlue: "#66d9ef",
-          brightCyan: "#a1efe4",
-          brightGreen: "#a6e22e",
-          brightMagenta: "#ae81ff",
-          brightRed: "#f92672",
-          brightWhite: "#f9f8f5",
-          brightYellow: "#f4bf75",
-          cursor: "#f8f8f0",
-          cyan: "#a1efe4",
-          foreground: "#f8f8f2",
-          green: "#a6e22e",
-          magenta: "#ae81ff",
-          red: "#f92672",
-          white: "#f8f8f2",
-          yellow: "#f4bf75"
-        }
+        theme: initialTerminalThemeRef.current
       });
       const fitAddon = new FitAddon();
       terminal.loadAddon(fitAddon);
@@ -160,6 +190,13 @@ export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>
         terminalRef.current = null;
       };
     }, [sendData]);
+
+    useEffect(() => {
+      const terminal = terminalRef.current;
+      if (terminal) {
+        terminal.options.theme = terminalTheme;
+      }
+    }, [terminalTheme]);
 
     useEffect(() => {
       const terminal = terminalRef.current;
@@ -208,6 +245,6 @@ export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>
 
     useEffect(() => closeSocket, [closeSocket]);
 
-    return <div className="h-full min-h-0 w-full bg-[#111317]" ref={containerRef} />;
+    return <div className="h-full min-h-0 w-full bg-terminal-background" ref={containerRef} />;
   }
 );
