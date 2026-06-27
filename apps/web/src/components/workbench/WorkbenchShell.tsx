@@ -149,10 +149,10 @@ export function WorkbenchShell() {
 
 function GlobalMenu({ onNavigateHome }: { onNavigateHome: () => void }) {
   return (
-    <aside className="flex w-[76px] shrink-0 flex-col items-center border-r bg-[#18202f] py-3 text-slate-200">
+    <aside className="flex w-[76px] shrink-0 flex-col items-center border-r bg-sidebar py-3 text-sidebar-foreground">
       <Link
         aria-label="Praxios Home"
-        className="mb-4 flex h-10 w-10 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25"
+        className="mb-4 flex h-10 w-10 items-center justify-center rounded-md bg-primary/15 text-primary hover:bg-primary/25"
         onClick={onNavigateHome}
         to="/"
       >
@@ -166,8 +166,8 @@ function GlobalMenu({ onNavigateHome }: { onNavigateHome: () => void }) {
               aria-label={item.label}
               className={({ isActive }) =>
                 cn(
-                  "flex h-11 w-11 items-center justify-center rounded-md text-slate-400 hover:bg-white/10 hover:text-white",
-                  isActive && "bg-white/15 text-white"
+                  "flex h-11 w-11 items-center justify-center rounded-md text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                  isActive && "bg-sidebar-active text-sidebar-foreground"
                 )
               }
               key={item.to}

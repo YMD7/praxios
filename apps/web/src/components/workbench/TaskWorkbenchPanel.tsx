@@ -188,7 +188,7 @@ function ContextPane({
               {task?.title ?? "Loading task..."}
             </h1>
             {contextUpdated && (
-              <span className="inline-flex h-6 shrink-0 items-center rounded-full bg-amber-100 px-2 text-xs font-semibold text-amber-800">
+              <span className="inline-flex h-6 shrink-0 items-center rounded-full bg-warning/15 px-2 text-xs font-semibold text-warning">
                 Context updated
               </span>
             )}
@@ -218,9 +218,7 @@ function ContextPane({
       <ScrollArea className="min-h-0 flex-1">
         <div className="grid gap-4 p-4">
           {error && (
-            <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-              {error}
-            </div>
+            <div className="error text-sm">{error}</div>
           )}
 
           <section className="grid gap-2">
@@ -251,7 +249,7 @@ function ContextPane({
 
           <section className="grid gap-2">
             <h2 className="text-sm font-semibold tracking-normal">context.md</h2>
-            <pre className="max-h-[52vh] whitespace-pre-wrap rounded-md border bg-[#111317] p-3 text-xs leading-5 text-slate-100">
+            <pre className="max-h-[52vh] whitespace-pre-wrap rounded-md border p-3 text-xs leading-5">
               {loading && !workspace
                 ? "Loading context..."
                 : workspace?.context ?? "No context file"}
