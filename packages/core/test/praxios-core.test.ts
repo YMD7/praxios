@@ -209,6 +209,63 @@ describe("PraxiosCore", () => {
     expect(core.getProposal(proposal.id)?.status).toBe("pending");
   });
 
+  it("creates task workspaces with an idempotent context file", () => {
+    const task = core.createTask({
+      title: "Review vendor agreement",
+      description: "Check legal and finance requirements.",
+      status: "New",
+      priority: "Normal",
+      completionCriteria: "Approve or reject the agreement."
+    });
+
+    const first = core.getTaskWorkspace(task.id);
+    const second = core.syncTaskWorkspace(task.id);
+
+    expect(first.path).toBe(path.join(tempDir, ".praxios", "tasks", task.id));
+    expect(fs.existsSync(first.contextPath)).toBe(true);
+    expect(fs.existsSync(path.join(first.path, "sources"))).toBe(true);
+    expect(second.contextPath).toBe(first.contextPath);
+    expect(second.context).toContain("# Task Context");
+    expect(second.context).toContain("## Accumulated Context");
+  });
+
+  it("projects approved task context proposals into context.md", () => {
+    const task = core.createTask({
+      title: "Review vendor agreement",
+      description: "Check legal and finance requirements.",
+      status: "New",
+      priority: "Normal",
+      completionCriteria: "Approve or reject the agreement."
+    });
+    const workspace = core.getTaskWorkspace(task.id);
+    const result = core.ingestSource({
+      sourceType: "manual_note",
+      sourceTitle: "Finance approval",
+      content: "Finance must approve the agreement before signature.",
+      metadata: {},
+      taskId: task.id,
+      processNow: true
+    });
+    const contextProposal = result.proposals.find(
+      (proposal) => proposal.proposalType === "task_context"
+    );
+
+    expect(contextProposal).toBeDefined();
+
+    const applied = core.applyProposal(contextProposal!.id);
+    const context = fs.readFileSync(workspace.contextPath, "utf8");
+
+    expect(applied.status).toBe("applied");
+    expect(context).toContain("## Latest Update");
+    expect(context).toContain(`Source: ${result.source.id}`);
+    expect(context).toContain("- title: Finance approval");
+    expect(context).toContain(
+      "- summary: Finance must approve the agreement before signature."
+    );
+    expect(context).toContain(`- proposal: ${contextProposal!.id}`);
+    expect(() => core.applyProposal(contextProposal!.id)).toThrow("Proposal is not pending");
+  });
+
   it("does not reject proposals that were already applied", () => {
     const result = core.ingestSource({
       sourceType: "manual_note",

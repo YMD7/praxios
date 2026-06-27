@@ -11,6 +11,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { Context } from "hono";
 import { z, ZodError } from "zod";
+import { listTerminalAgents } from "./terminal.js";
 
 const proposalStatusQuerySchema = z.enum(proposalStatuses).optional();
 const reviewBodySchema = z.object({
@@ -113,6 +114,14 @@ export function createApp(core = new PraxiosCore()) {
 
   app.get("/tasks/:taskId/proposals", (c) => {
     return c.json({ proposals: core.listProposals({ taskId: c.req.param("taskId") }) });
+  });
+
+  app.get("/tasks/:taskId/workspace", (c) => {
+    return c.json({ workspace: core.getTaskWorkspace(c.req.param("taskId")) });
+  });
+
+  app.post("/tasks/:taskId/workspace/sync", (c) => {
+    return c.json({ workspace: core.syncTaskWorkspace(c.req.param("taskId")) });
   });
 
   app.get("/sources", (c) => c.json({ sources: core.listSources() }));
@@ -225,6 +234,8 @@ export function createApp(core = new PraxiosCore()) {
   });
 
   app.get("/audit", (c) => c.json({ events: core.listAuditEvents() }));
+
+  app.get("/terminal/agents", (c) => c.json({ agents: listTerminalAgents() }));
 
   return app;
 }

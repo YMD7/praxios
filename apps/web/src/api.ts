@@ -10,6 +10,13 @@ import type {
 
 const apiBase = import.meta.env.VITE_API_URL ?? "/api";
 
+export interface TaskWorkspaceInfo {
+  taskId: string;
+  path: string;
+  contextPath: string;
+  context: string;
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(`${apiBase}${path}`, {
     ...init,
@@ -52,6 +59,15 @@ export const api = {
   async listTaskProposals(taskId: string) {
     return request<{ proposals: Proposal[] }>(`/tasks/${taskId}/proposals`);
   },
+  async getTaskWorkspace(taskId: string) {
+    return request<{ workspace: TaskWorkspaceInfo }>(`/tasks/${taskId}/workspace`);
+  },
+  async syncTaskWorkspace(taskId: string) {
+    return request<{ workspace: TaskWorkspaceInfo }>(`/tasks/${taskId}/workspace/sync`, {
+      method: "POST",
+      body: JSON.stringify({})
+    });
+  },
   async ingestSource(input: {
     sourceType: string;
     sourceTitle: string;
@@ -63,6 +79,9 @@ export const api = {
       method: "POST",
       body: JSON.stringify(input)
     });
+  },
+  async listSources() {
+    return request<{ sources: Source[] }>("/sources");
   },
   async getSource(sourceId: string) {
     return request<{ source: Source }>(`/sources/${sourceId}`);

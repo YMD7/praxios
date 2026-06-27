@@ -120,4 +120,28 @@ describe("Praxios API validation", () => {
     expect(secondApply.status).toBe(409);
     expect(await secondApply.json()).toMatchObject({ error: "proposal_not_pending" });
   });
+
+  it("creates task workspace context files through the API", async () => {
+    const task = core.createTask({
+      title: "Workspace task",
+      description: "Prepare task workspace.",
+      status: "New",
+      priority: "Normal",
+      completionCriteria: "Workspace exists."
+    });
+
+    const first = await app.request(`/tasks/${task.id}/workspace`);
+    const firstBody = await first.json();
+    const second = await app.request(`/tasks/${task.id}/workspace/sync`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
+    const secondBody = await second.json();
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(firstBody.workspace.path).toBe(path.join(tempDir, ".praxios", "tasks", task.id));
+    expect(secondBody.workspace.context).toContain("# Task Context");
+  });
 });

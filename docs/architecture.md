@@ -75,6 +75,11 @@ Web UI は、ユーザーがナビゲーターとして AI の業務遂行を監
 
 タスクごとに URL を持ち、ブラウザーのタブやウィンドウで個別に開けることを前提とする。
 
+AI terminal は Praxios が自前推論を提供せず、ユーザーのローカル
+Claude Code / Codex を Hono WebSocket と node-pty 経由で起動する。
+Web UI 側の terminal renderer は xterm.js を採用し、日本語入力と
+CJK 幅表示をブラウザー上で扱う。
+
 ### Approval Queue
 
 ユーザー承認が必要な操作を集約する画面。

@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node scripts/ensure-node-pty.mjs",
     "dev": "tsx watch src/server.ts",
+    "prestart": "node scripts/ensure-node-pty.mjs",
     "start": "tsx src/server.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
@@ -14,6 +16,11 @@
     "@hono/node-server": "^1.14.0",
     "@praxios/core": "workspace:*",
     "hono": "^4.8.0",
+    "node-pty": "^1.1.0",
+    "ws": "^8.21.0",
     "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.1"
   }
 }
