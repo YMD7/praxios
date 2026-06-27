@@ -1,6 +1,7 @@
 import type { Proposal, Task } from "@praxios/core";
-import { Check, FileText, RefreshCw, SendHorizonal, X } from "lucide-react";
+import { Check, FileText, RefreshCw, Send, SendHorizonal, X } from "lucide-react";
 import type {
+  FormEvent,
   KeyboardEvent as ReactKeyboardEvent,
   PointerEvent as ReactPointerEvent,
   ReactNode
@@ -106,6 +107,25 @@ export function TaskWorkbenchPanel({
     }
   }
 
+  async function ingestSource(input: {
+    sourceTitle: string;
+    sourceType: string;
+    content: string;
+  }) {
+    setError(null);
+    try {
+      await api.ingestSource({
+        ...input,
+        taskId: tab.taskId,
+        processNow: true
+      });
+      await load();
+    } catch (ingestError) {
+      setError(ingestError instanceof Error ? ingestError.message : "Failed to ingest source");
+      throw ingestError;
+    }
+  }
+
   function shareToAi() {
     terminalRef.current?.insertText(shareSnippet);
     setContextUpdated(false);
@@ -122,6 +142,7 @@ export function TaskWorkbenchPanel({
               error={error}
               loading={loading}
               onApplyProposal={(proposalId) => void applyProposal(proposalId)}
+              onIngestSource={ingestSource}
               onRefresh={() => void load()}
               onRejectProposal={(proposalId) => void rejectProposal(proposalId)}
               onShareToAi={shareToAi}
@@ -293,6 +314,7 @@ function ContextPane({
   error,
   loading,
   onApplyProposal,
+  onIngestSource,
   onRefresh,
   onRejectProposal,
   onShareToAi,
@@ -307,6 +329,11 @@ function ContextPane({
   error: string | null;
   loading: boolean;
   onApplyProposal: (proposalId: string) => void;
+  onIngestSource: (input: {
+    sourceTitle: string;
+    sourceType: string;
+    content: string;
+  }) => Promise<void>;
   onRefresh: () => void;
   onRejectProposal: (proposalId: string) => void;
   onShareToAi: () => void;
@@ -370,6 +397,8 @@ function ContextPane({
             </p>
           </section>
 
+          <SourceIngestForm disabled={loading || !task} onIngestSource={onIngestSource} />
+
           <section className="grid gap-2">
             <h2 className="text-sm font-semibold tracking-normal">Work Queue</h2>
             <div className="grid grid-cols-3 gap-2 text-sm">
@@ -395,6 +424,82 @@ function ContextPane({
         </div>
       </ScrollArea>
     </section>
+  );
+}
+
+function SourceIngestForm({
+  disabled,
+  onIngestSource
+}: {
+  disabled: boolean;
+  onIngestSource: (input: {
+    sourceTitle: string;
+    sourceType: string;
+    content: string;
+  }) => Promise<void>;
+}) {
+  const [sourceTitle, setSourceTitle] = useState("");
+  const [sourceType, setSourceType] = useState("manual_note");
+  const [content, setContent] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitting(true);
+
+    try {
+      await onIngestSource({ sourceTitle, sourceType, content });
+      setSourceTitle("");
+      setContent("");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <form className="grid gap-3 rounded-md border bg-card p-3" onSubmit={(event) => void submit(event)}>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold tracking-normal">Add Source</h2>
+        <Button disabled={disabled || submitting} size="sm" type="submit">
+          <Send aria-hidden="true" className="h-4 w-4" />
+          Ingest
+        </Button>
+      </div>
+      <label className="grid gap-1 text-xs font-semibold text-muted-foreground">
+        Title
+        <input
+          className="rounded-md border bg-background px-3 py-2 text-sm font-normal text-foreground"
+          disabled={disabled || submitting}
+          onChange={(event) => setSourceTitle(event.target.value)}
+          required
+          value={sourceTitle}
+        />
+      </label>
+      <label className="grid gap-1 text-xs font-semibold text-muted-foreground">
+        Type
+        <select
+          className="rounded-md border bg-background px-3 py-2 text-sm font-normal text-foreground"
+          disabled={disabled || submitting}
+          onChange={(event) => setSourceType(event.target.value)}
+          value={sourceType}
+        >
+          <option value="manual_note">Manual note</option>
+          <option value="slack_message">Slack message</option>
+          <option value="email_thread">Email thread</option>
+          <option value="meeting_note">Meeting note</option>
+        </select>
+      </label>
+      <label className="grid gap-1 text-xs font-semibold text-muted-foreground">
+        Content
+        <textarea
+          className="min-h-28 resize-y rounded-md border bg-background px-3 py-2 text-sm font-normal leading-5 text-foreground"
+          disabled={disabled || submitting}
+          onChange={(event) => setContent(event.target.value)}
+          required
+          value={content}
+        />
+      </label>
+    </form>
   );
 }
 

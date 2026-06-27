@@ -54,9 +54,14 @@ export function WorkbenchShell() {
     updateTaskTabTitle
   } = useWorkbenchTabs();
 
+  const routeTaskId = matchTaskPath(location.pathname);
   const activeTaskTab = useMemo(
     () => taskTabs.find((tab) => tab.id === activeTabId),
     [activeTabId, taskTabs]
+  );
+  const routeTaskTab = useMemo(
+    () => taskTabs.find((tab) => tab.id === (routeTaskId ? getTaskTabId(routeTaskId) : "")),
+    [routeTaskId, taskTabs]
   );
   const handleTaskLoaded = useCallback(
     (task: { id: string; title: string }) => updateTaskTabTitle(task.id, task.title),
@@ -64,24 +69,22 @@ export function WorkbenchShell() {
   );
 
   useEffect(() => {
-    const taskId = matchTaskPath(location.pathname);
-
     if (!initialRouteSyncedRef.current) {
       initialRouteSyncedRef.current = true;
-      if (!taskId && activeTaskTab) {
+      if (location.pathname === "/" && activeTaskTab) {
         navigate(`/tasks/${activeTaskTab.taskId}`, { replace: true });
         return;
       }
     }
 
-    if (!taskId) {
+    if (!routeTaskId) {
       setActiveTabId(HOME_TAB_ID);
       return;
     }
 
-    const tabId = getTaskTabId(taskId);
+    const tabId = getTaskTabId(routeTaskId);
     if (!taskTabs.some((tab) => tab.id === tabId)) {
-      openTaskTab({ id: taskId, title: "Loading task..." });
+      openTaskTab({ id: routeTaskId, title: "Loading task..." });
       return;
     }
     setActiveTabId(tabId);
@@ -90,6 +93,7 @@ export function WorkbenchShell() {
     location.pathname,
     navigate,
     openTaskTab,
+    routeTaskId,
     setActiveTabId,
     taskTabs
   ]);
@@ -126,21 +130,15 @@ export function WorkbenchShell() {
           tabs={openTabs}
         />
         <div className="min-h-0 flex-1">
-          <section className={cn("h-full min-h-0", activeTabId !== HOME_TAB_ID && "hidden")}>
+          {routeTaskTab ? (
+            <TaskWorkbenchPanel
+              onRegisterTerminal={(handle) => registerTerminal(routeTaskTab.id, handle)}
+              onTaskLoaded={handleTaskLoaded}
+              tab={routeTaskTab}
+            />
+          ) : (
             <HomeTabPanel />
-          </section>
-          {taskTabs.map((tab) => (
-            <section
-              className={cn("h-full min-h-0", activeTabId !== tab.id && "hidden")}
-              key={tab.id}
-            >
-              <TaskWorkbenchPanel
-                onRegisterTerminal={(handle) => registerTerminal(tab.id, handle)}
-                onTaskLoaded={handleTaskLoaded}
-                tab={tab}
-              />
-            </section>
-          ))}
+          )}
         </div>
       </main>
     </div>
