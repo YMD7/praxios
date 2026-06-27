@@ -72,8 +72,14 @@ export function proposalsRoutes(repos: Repositories) {
       const result = await applyProposal(repos, id);
       return c.json({ proposal: await repos.proposals.get(id), result });
     } catch (err) {
-      // 適用に失敗しても承認状態は保持し、エラーを返す。
-      return c.json({ proposal: updated, error: String(err) }, 200);
+      // 適用に失敗したら pending に戻す。approved のまま固着させると、
+      // 再試行が #1 のガードで弾かれて手詰まりになるため。
+      const reverted = await repos.proposals.update(id, {
+        status: "pending",
+        reviewedAt: null,
+        reviewerId: null,
+      });
+      return c.json({ proposal: reverted ?? updated, error: String(err) }, 500);
     }
   });
 
