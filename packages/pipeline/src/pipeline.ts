@@ -44,13 +44,24 @@ function heuristicProposals(
   ];
 }
 
-/** Source を解析して Proposal を生成する。 */
+/**
+ * Source を解析して Proposal を生成する。
+ *
+ * 既にこの Source に紐づく Proposal があれば、冪等性のため再生成せず空配列を返す
+ * （手動 analyze の二重実行による提案重複を防ぐ）。force=true で再生成を強制する。
+ */
 export async function analyzeSource(
   repos: Repositories,
   sourceId: string,
+  force = false,
 ): Promise<Proposal[]> {
   const source = await repos.sources.get(sourceId);
   if (!source) throw new Error(`source not found: ${sourceId}`);
+
+  if (!force) {
+    const existing = await repos.proposals.list();
+    if (existing.some((p) => p.sourceIds.includes(sourceId))) return [];
+  }
 
   const content = readSourceContent(source.sourcePath);
 
@@ -116,7 +127,8 @@ export async function analyzePendingSources(
   let count = 0;
   for (const s of sources) {
     if (!covered.has(s.id)) {
-      const created = await analyzeSource(repos, s.id);
+      // 既に covered で絞り込み済みなので、重複チェックは省略する。
+      const created = await analyzeSource(repos, s.id, true);
       count += created.length;
     }
   }
