@@ -7,7 +7,7 @@ import {
   SearchCheck,
   X
 } from "lucide-react";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   Link,
   Navigate,
@@ -57,6 +57,10 @@ export function WorkbenchShell() {
   const activeTaskTab = useMemo(
     () => taskTabs.find((tab) => tab.id === activeTabId),
     [activeTabId, taskTabs]
+  );
+  const handleTaskLoaded = useCallback(
+    (task: { id: string; title: string }) => updateTaskTabTitle(task.id, task.title),
+    [updateTaskTabTitle]
   );
 
   useEffect(() => {
@@ -132,7 +136,7 @@ export function WorkbenchShell() {
             >
               <TaskWorkbenchPanel
                 onRegisterTerminal={(handle) => registerTerminal(tab.id, handle)}
-                onTaskLoaded={(task) => updateTaskTabTitle(task.id, task.title)}
+                onTaskLoaded={handleTaskLoaded}
                 tab={tab}
               />
             </section>

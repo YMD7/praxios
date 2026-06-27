@@ -106,9 +106,15 @@ export function useWorkbenchTabs() {
 
   const updateTaskTabTitle = useCallback((taskId: string, title: string) => {
     const tabId = getTaskTabId(taskId);
-    setTaskTabs((current) =>
-      current.map((tab) => (tab.id === tabId && tab.title !== title ? { ...tab, title } : tab))
-    );
+    setTaskTabs((current) => {
+      let changed = false;
+      const nextTabs = current.map((tab) => {
+        if (tab.id !== tabId || tab.title === title) return tab;
+        changed = true;
+        return { ...tab, title };
+      });
+      return changed ? nextTabs : current;
+    });
   }, []);
 
   return {

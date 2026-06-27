@@ -252,7 +252,9 @@ function ContextPane({
           <section className="grid gap-2">
             <h2 className="text-sm font-semibold tracking-normal">context.md</h2>
             <pre className="max-h-[52vh] whitespace-pre-wrap rounded-md border bg-[#111317] p-3 text-xs leading-5 text-slate-100">
-              {loading ? "Loading context..." : workspace?.context ?? "No context file"}
+              {loading && !workspace
+                ? "Loading context..."
+                : workspace?.context ?? "No context file"}
             </pre>
           </section>
         </div>
