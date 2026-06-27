@@ -93,4 +93,30 @@ describe("PraxiosCore", () => {
     expect(targetLinks.backlinks[0]?.fromPageId).toBe("contract-process");
     expect(targetLinks.backlinks[0]?.status).toBe("resolved");
   });
+
+  it("does not reject proposals that were already applied", () => {
+    const result = core.ingestSource({
+      sourceType: "manual_note",
+      sourceTitle: "Contract request",
+      content: "Create an agreement draft.",
+      metadata: {},
+      processNow: true
+    });
+    const taskProposal = result.proposals.find(
+      (proposal) => proposal.proposalType === "task_create"
+    );
+
+    expect(taskProposal).toBeDefined();
+
+    core.applyProposal(taskProposal!.id);
+
+    expect(() => core.rejectProposal(taskProposal!.id)).toThrow("Proposal is not pending");
+
+    const proposal = core
+      .listProposals()
+      .find((candidate) => candidate.id === taskProposal!.id);
+
+    expect(proposal?.status).toBe("applied");
+    expect(core.listTasks()).toHaveLength(1);
+  });
 });

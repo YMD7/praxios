@@ -333,6 +333,14 @@ export class PraxiosCore {
   }
 
   rejectProposal(id: string, reviewerId = "local-user", reviewComment: string | null = null) {
+    const proposal = this.repo.getProposal(id);
+    if (!proposal) {
+      throw new Error(`Proposal not found: ${id}`);
+    }
+    if (proposal.status !== "pending") {
+      throw new Error(`Proposal is not pending: ${id}`);
+    }
+
     const rejected = this.repo.rejectProposal(id, reviewerId, reviewComment);
 
     this.repo.createAuditEvent({
@@ -341,7 +349,7 @@ export class PraxiosCore {
       subjectType: "proposal",
       subjectId: id,
       payload: {
-        proposalType: rejected.proposalType
+        proposalType: proposal.proposalType
       }
     });
 
