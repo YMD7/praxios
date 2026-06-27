@@ -15,6 +15,11 @@ seedIfEmpty();
 const app = new Hono();
 app.use("/api/*", cors());
 
+function summarizeSourceContent(content: string) {
+  const compact = content.replace(/\s+/g, " ").trim();
+  return compact.length > 180 ? `${compact.slice(0, 180)}...` : compact;
+}
+
 app.get("/api/health", (c) => c.json({ ok: true }));
 
 app.get("/api/tasks", (c) => {
@@ -78,16 +83,31 @@ app.get("/api/sources/:id", (c) => {
 app.post("/api/sources", async (c) => {
   const body = await c.req.json();
   const taskId = body.taskId ? String(body.taskId) : undefined;
+  const content = String(body.content ?? "");
   const source = saveSource({
     sourceType: String(body.sourceType ?? "manual_note"),
     sourceTitle: String(body.sourceTitle ?? "Untitled source"),
-    content: String(body.content ?? ""),
+    content,
     provider: String(body.provider ?? "manual"),
     sourceUrl: body.sourceUrl ? String(body.sourceUrl) : undefined,
     sourceRefId: body.sourceRefId ? String(body.sourceRefId) : undefined,
     occurredAt: body.occurredAt ? String(body.occurredAt) : undefined,
     metadata: { ...(body.metadata ?? {}), taskId }
   });
+
+  if (taskId) {
+    repository.createContext({
+      taskId,
+      sourceType: source.sourceType,
+      sourceId: source.id,
+      title: source.sourceTitle,
+      summary: summarizeSourceContent(content),
+      occurredAt: source.occurredAt,
+      relevanceScore: 1,
+      evidence: { attachedBy: "manual_source_create" }
+    });
+  }
+
   return c.json(source, 201);
 });
 
@@ -175,4 +195,3 @@ app.put("/api/wiki/:pageId", async (c) => {
 const port = Number(process.env.PORT ?? 8787);
 serve({ fetch: app.fetch, port });
 console.log(`Praxios API listening on http://localhost:${port}`);
-
