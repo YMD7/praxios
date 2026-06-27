@@ -5,7 +5,10 @@ import path from "node:path";
 import { createRuntimeConfig, type RuntimeConfig, type RuntimeConfigInput } from "../config.js";
 import { openDatabase, type PraxiosDatabase } from "../db/client.js";
 import { ConflictError, NotFoundError } from "../errors.js";
-import { parseProposalPayload } from "../proposals/definitions.js";
+import {
+  parseProposalPayload,
+  type TaskContextProposalPayload
+} from "../proposals/definitions.js";
 import {
   DeterministicProposalGenerator,
   type ProposalGenerator
@@ -37,9 +40,47 @@ export interface ProcessPendingSourcesResult {
   proposalCount: number;
 }
 
+export interface TaskWorkspaceInfo {
+  taskId: string;
+  path: string;
+  contextPath: string;
+  context: string;
+}
+
 export interface PraxiosCoreOptions extends RuntimeConfigInput {
   proposalGenerator?: ProposalGenerator;
 }
+
+interface ContextProjectionUpdate {
+  appliedAt: string;
+  payload: TaskContextProposalPayload;
+  proposalId: string;
+  sourceId: string;
+  taskId: string;
+}
+
+const initialTaskContext = `# Task Context
+
+## Operating Instructions
+
+このファイルを、この Task の正規コンテキストとして扱う。
+「Context was updated」と言われたら、Latest Update と Accumulated Context を確認する。
+
+## Current Summary
+
+まだ要約はありません。
+
+## Latest Update
+
+まだ更新はありません。
+
+## Accumulated Context
+
+まだ承認済み Context はありません。
+`;
+
+const emptyLatestUpdate = "まだ更新はありません。";
+const emptyAccumulatedContext = "まだ承認済み Context はありません。";
 
 export class PraxiosCore {
   readonly config: RuntimeConfig;
@@ -106,6 +147,14 @@ export class PraxiosCore {
 
   listContextItems(taskId: string) {
     return this.repo.listContextItems(taskId);
+  }
+
+  getTaskWorkspace(taskId: string): TaskWorkspaceInfo {
+    return this.ensureTaskWorkspace(taskId);
+  }
+
+  syncTaskWorkspace(taskId: string): TaskWorkspaceInfo {
+    return this.ensureTaskWorkspace(taskId);
   }
 
   listSources() {
@@ -219,9 +268,15 @@ export class PraxiosCore {
   }
 
   applyProposal(id: string, reviewerId = "local-user", reviewComment: string | null = null) {
-    return this.runInTransaction(() =>
+    const result = this.runInTransaction(() =>
       this.applyProposalWithinTransaction(id, reviewerId, reviewComment)
     );
+
+    if (result.contextProjection) {
+      this.projectContextUpdate(result.contextProjection);
+    }
+
+    return result.proposal;
   }
 
   private applyProposalWithinTransaction(
@@ -240,6 +295,7 @@ export class PraxiosCore {
     let subjectType = "proposal";
     let subjectId = proposal.id;
     let appliedTaskId: string | undefined;
+    let contextProjection: Omit<ContextProjectionUpdate, "appliedAt"> | null = null;
 
     if (proposal.proposalType === "task_create") {
       const payload = parseProposalPayload("task_create", proposal.payload);
@@ -280,6 +336,12 @@ export class PraxiosCore {
         evidence: proposal.evidence
       });
 
+      contextProjection = {
+        payload,
+        proposalId: proposal.id,
+        sourceId: proposal.sourceIds[0] ?? "unknown",
+        taskId: proposal.taskId
+      };
       subjectType = "task";
       subjectId = proposal.taskId;
     }
@@ -310,7 +372,16 @@ export class PraxiosCore {
       }
     });
 
-    return applied;
+    return {
+      proposal: applied,
+      contextProjection:
+        contextProjection && applied.appliedAt
+          ? {
+              ...contextProjection,
+              appliedAt: applied.appliedAt
+            }
+          : null
+    };
   }
 
   rejectProposal(id: string, reviewerId = "local-user", reviewComment: string | null = null) {
@@ -375,6 +446,42 @@ export class PraxiosCore {
     return this.repo.listAuditEvents();
   }
 
+  private ensureTaskWorkspace(taskId: string): TaskWorkspaceInfo {
+    if (!this.repo.getTask(taskId)) {
+      throw new NotFoundError(`Task not found: ${taskId}`);
+    }
+
+    const workspacePath = path.join(this.config.workspaceRoot, ".praxios", "tasks", taskId);
+    const sourcesPath = path.join(workspacePath, "sources");
+    const contextPath = path.join(workspacePath, "context.md");
+
+    fs.mkdirSync(sourcesPath, { recursive: true });
+
+    if (!fs.existsSync(contextPath)) {
+      fs.writeFileSync(contextPath, initialTaskContext, "utf8");
+    } else {
+      const current = fs.readFileSync(contextPath, "utf8");
+      const normalized = ensureContextDocument(current);
+      if (normalized !== current) {
+        fs.writeFileSync(contextPath, normalized, "utf8");
+      }
+    }
+
+    return {
+      taskId,
+      path: workspacePath,
+      contextPath,
+      context: fs.readFileSync(contextPath, "utf8")
+    };
+  }
+
+  private projectContextUpdate(update: ContextProjectionUpdate): void {
+    const workspace = this.ensureTaskWorkspace(update.taskId);
+    const current = fs.readFileSync(workspace.contextPath, "utf8");
+    const next = applyContextUpdate(current, update);
+    fs.writeFileSync(workspace.contextPath, next, "utf8");
+  }
+
   private syncWikiLinks(pageId: string, body: string, sourceId: string | null): void {
     const links = extractWikiLinks(body).map((link) => ({
       toPageId: link.pageId,
@@ -404,4 +511,86 @@ function toJsonObject(value: Record<string, unknown>): JsonObject {
 function getMetadataString(metadata: JsonObject, key: string): string | null {
   const value = metadata[key];
   return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function ensureContextDocument(content: string): string {
+  let next = content.trim().length > 0 ? content.trimEnd() : initialTaskContext.trimEnd();
+  const requiredSections = [
+    ["Operating Instructions", initialTaskContextSection("Operating Instructions")],
+    ["Current Summary", "まだ要約はありません。"],
+    ["Latest Update", emptyLatestUpdate],
+    ["Accumulated Context", emptyAccumulatedContext]
+  ] as const;
+
+  if (!next.startsWith("# Task Context")) {
+    next = `# Task Context\n\n${next}`;
+  }
+
+  for (const [heading, fallback] of requiredSections) {
+    if (!next.includes(`## ${heading}`)) {
+      next = `${next}\n\n## ${heading}\n\n${fallback}`;
+    }
+  }
+
+  return `${next.trimEnd()}\n`;
+}
+
+function applyContextUpdate(content: string, update: ContextProjectionUpdate): string {
+  const normalized = ensureContextDocument(content);
+  const entry = formatContextEntry(update);
+  const currentAccumulated = readMarkdownSection(normalized, "Accumulated Context").trim();
+  const accumulated =
+    currentAccumulated === emptyAccumulatedContext || currentAccumulated.length === 0
+      ? entry
+      : `${currentAccumulated}\n\n${entry}`;
+
+  return replaceMarkdownSection(
+    replaceMarkdownSection(normalized, "Latest Update", entry),
+    "Accumulated Context",
+    accumulated
+  );
+}
+
+function formatContextEntry(update: ContextProjectionUpdate): string {
+  return [
+    `### ${update.appliedAt} - Source: ${sanitizeMarkdownLine(update.sourceId)}`,
+    "",
+    `- title: ${sanitizeMarkdownLine(update.payload.title)}`,
+    `- summary: ${sanitizeMarkdownLine(update.payload.summary)}`,
+    `- proposal: ${sanitizeMarkdownLine(update.proposalId)}`
+  ].join("\n");
+}
+
+function readMarkdownSection(content: string, heading: string): string {
+  const match = content.match(sectionPattern(heading));
+  return match?.[2] ?? "";
+}
+
+function replaceMarkdownSection(content: string, heading: string, body: string): string {
+  const pattern = sectionPattern(heading);
+  if (!pattern.test(content)) {
+    return `${content.trimEnd()}\n\n## ${heading}\n\n${body.trim()}\n`;
+  }
+
+  return content.replace(pattern, (_match, prefix: string, _body: string, suffix: string) => {
+    return `${prefix}${body.trim()}\n${suffix ?? ""}`;
+  });
+}
+
+function sectionPattern(heading: string): RegExp {
+  return new RegExp(
+    `(## ${escapeRegExp(heading)}\\n\\n)([\\s\\S]*?)(\\n(?=## )|$)`
+  );
+}
+
+function initialTaskContextSection(heading: string): string {
+  return readMarkdownSection(initialTaskContext, heading).trim();
+}
+
+function sanitizeMarkdownLine(value: string): string {
+  return value.replace(/\s+/g, " ").trim() || "-";
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

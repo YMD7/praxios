@@ -116,6 +116,14 @@ export function createApp(core = new PraxiosCore()) {
     return c.json({ proposals: core.listProposals({ taskId: c.req.param("taskId") }) });
   });
 
+  app.get("/tasks/:taskId/workspace", (c) => {
+    return c.json({ workspace: core.getTaskWorkspace(c.req.param("taskId")) });
+  });
+
+  app.post("/tasks/:taskId/workspace/sync", (c) => {
+    return c.json({ workspace: core.syncTaskWorkspace(c.req.param("taskId")) });
+  });
+
   app.get("/sources", (c) => c.json({ sources: core.listSources() }));
 
   app.post("/sources", async (c) => {

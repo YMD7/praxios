@@ -16,6 +16,7 @@ export {
 export { DeterministicProposalGenerator } from "./proposals/generator.js";
 export { PraxiosRepository } from "./repository.js";
 export { PraxiosCore } from "./services/praxios-core.js";
+export type { TaskWorkspaceInfo } from "./services/praxios-core.js";
 export {
   createTaskSchema,
   ingestSourceSchema,
