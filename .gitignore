@@ -1,1 +1,13 @@
 .worktrees/
+.tmp/
+node_modules/
+dist/
+.vite/
+coverage/
+data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+.env
+.env.*
+!.env.example
