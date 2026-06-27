@@ -45,6 +45,7 @@ export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>
   function WtermTerminal({ agent, onStatusChange, tabId, taskId }, ref) {
     const { ref: terminalRef, write, focus } = useTerminal();
     const [terminal, setTerminal] = useState<WTerm | null>(null);
+    const inputPositionCleanupRef = useRef<(() => void) | null>(null);
     const socketRef = useRef<WebSocket | null>(null);
     const lastSizeRef = useRef<{ cols: number; rows: number } | null>(null);
 
@@ -134,9 +135,19 @@ export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>
     useEffect(() => closeSocket, [closeSocket]);
 
     const handleReady = useCallback((instance: WTerm) => {
+      inputPositionCleanupRef.current?.();
+      inputPositionCleanupRef.current = installTerminalInputPositioning(instance) ?? null;
       setTerminal(instance);
       lastSizeRef.current = { cols: instance.cols, rows: instance.rows };
     }, []);
+
+    useEffect(
+      () => () => {
+        inputPositionCleanupRef.current?.();
+        inputPositionCleanupRef.current = null;
+      },
+      []
+    );
 
     const handleData = useCallback((data: string) => sendData(data), [sendData]);
 
@@ -176,3 +187,46 @@ export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>
     );
   }
 );
+
+function installTerminalInputPositioning(terminal: WTerm) {
+  const textarea = terminal.element.querySelector("textarea");
+  if (!textarea) return undefined;
+
+  textarea.removeAttribute("aria-hidden");
+  textarea.setAttribute("aria-label", "Terminal input");
+
+  const positionTextarea = () => {
+    const cursor = terminal.element.querySelector(".term-cursor");
+    const hostRect = terminal.element.getBoundingClientRect();
+    const cursorRect = cursor?.getBoundingClientRect();
+    const left = cursorRect ? cursorRect.left - hostRect.left + terminal.element.scrollLeft : 12;
+    const top = cursorRect ? cursorRect.top - hostRect.top + terminal.element.scrollTop : 12;
+    const width = cursorRect?.width || 8;
+    const height = cursorRect?.height || 17;
+
+    const style = textarea.style;
+    style.left = `${Math.max(0, left)}px`;
+    style.top = `${Math.max(0, top)}px`;
+    style.width = `${Math.max(1, width)}px`;
+    style.height = `${Math.max(1, height)}px`;
+  };
+
+  const observer = new MutationObserver(positionTextarea);
+  observer.observe(terminal.element, {
+    attributes: true,
+    childList: true,
+    subtree: true
+  });
+
+  positionTextarea();
+  textarea.addEventListener("focus", positionTextarea);
+  terminal.element.addEventListener("scroll", positionTextarea);
+  window.addEventListener("resize", positionTextarea);
+
+  return () => {
+    observer.disconnect();
+    textarea.removeEventListener("focus", positionTextarea);
+    terminal.element.removeEventListener("scroll", positionTextarea);
+    window.removeEventListener("resize", positionTextarea);
+  };
+}
