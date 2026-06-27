@@ -1,0 +1,26 @@
+{
+  "name": "praxios",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.30.3",
+  "scripts": {
+    "dev": "pnpm --parallel --filter @praxios/api --filter @praxios/web dev",
+    "dev:api": "pnpm --filter @praxios/api dev",
+    "dev:web": "pnpm --filter @praxios/web dev",
+    "dev:worker": "pnpm --filter @praxios/worker dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm --filter @praxios/core test",
+    "db:init": "pnpm --filter @praxios/core db:init"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^24.0.0",
+    "@vitejs/plugin-react": "^4.6.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0",
+    "vite": "^7.0.0",
+    "vitest": "^3.2.0"
+  }
+}
