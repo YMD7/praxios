@@ -149,6 +149,16 @@ export class PraxiosCore {
     return this.repo.listContextItems(taskId);
   }
 
+  listTaskSources(taskId: string) {
+    if (!this.repo.getTask(taskId)) {
+      throw new NotFoundError(`Task not found: ${taskId}`);
+    }
+
+    return this.repo
+      .listSources()
+      .filter((source) => getMetadataString(source.metadata, "taskId") === taskId);
+  }
+
   getTaskWorkspace(taskId: string): TaskWorkspaceInfo {
     return this.ensureTaskWorkspace(taskId);
   }

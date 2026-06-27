@@ -144,4 +144,42 @@ describe("Praxios API validation", () => {
     expect(firstBody.workspace.path).toBe(path.join(tempDir, ".praxios", "tasks", task.id));
     expect(secondBody.workspace.context).toContain("# Task Context");
   });
+
+  it("lists sources attached to a task", async () => {
+    const task = core.createTask({
+      title: "Contract task",
+      description: "Prepare a contractor agreement.",
+      status: "New",
+      priority: "Normal",
+      completionCriteria: "Context is ready."
+    });
+
+    await app.request("/sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sourceType: "email_thread",
+        sourceTitle: "Contract terms thread",
+        content: "The amount is 1,420,000 JPY.",
+        taskId: task.id
+      })
+    });
+    await app.request("/sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sourceType: "manual_note",
+        sourceTitle: "Unattached source",
+        content: "This should not appear in task sources."
+      })
+    });
+
+    const response = await app.request(`/tasks/${task.id}/sources`);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.sources).toHaveLength(1);
+    expect(body.sources[0].sourceTitle).toBe("Contract terms thread");
+    expect(body.sources[0].metadata.taskId).toBe(task.id);
+  });
 });
