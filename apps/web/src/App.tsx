@@ -1,6 +1,7 @@
 import { ClipboardCheck, Database, ListTodo, Network, SearchCheck } from "lucide-react";
-import { NavLink, Navigate, Route, Routes } from "react-router-dom";
+import { NavLink, Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { ApprovalQueue } from "./views/ApprovalQueue.js";
+import { Home } from "./views/Home.js";
 import { SourceViewer } from "./views/SourceViewer.js";
 import { TaskList } from "./views/TaskList.js";
 import { TaskWorkspace } from "./views/TaskWorkspace.js";
@@ -9,12 +10,29 @@ import { WikiPageView } from "./views/WikiPageView.js";
 
 export function App() {
   return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route element={<LegacyShell />}>
+        <Route path="/tasks" element={<TaskList />} />
+        <Route path="/tasks/:taskId" element={<TaskWorkspace />} />
+        <Route path="/approvals" element={<ApprovalQueue />} />
+        <Route path="/wiki" element={<WikiList />} />
+        <Route path="/wiki/:pageId" element={<WikiPageView />} />
+        <Route path="/sources/:sourceId" element={<SourceViewer />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+function LegacyShell() {
+  return (
     <div className="shell">
       <aside className="sidebar">
-        <div className="brand">
+        <NavLink className="brand" to="/">
           <SearchCheck aria-hidden="true" size={22} />
           <span>Praxios</span>
-        </div>
+        </NavLink>
         <nav className="nav">
           <NavLink to="/tasks">
             <ListTodo aria-hidden="true" size={18} />
@@ -35,15 +53,7 @@ export function App() {
         </nav>
       </aside>
       <main className="main">
-        <Routes>
-          <Route path="/" element={<Navigate to="/tasks" replace />} />
-          <Route path="/tasks" element={<TaskList />} />
-          <Route path="/tasks/:taskId" element={<TaskWorkspace />} />
-          <Route path="/approvals" element={<ApprovalQueue />} />
-          <Route path="/wiki" element={<WikiList />} />
-          <Route path="/wiki/:pageId" element={<WikiPageView />} />
-          <Route path="/sources/:sourceId" element={<SourceViewer />} />
-        </Routes>
+        <Outlet />
       </main>
     </div>
   );
