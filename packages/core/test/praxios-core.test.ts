@@ -94,6 +94,83 @@ describe("PraxiosCore", () => {
     expect(targetLinks.backlinks[0]?.status).toBe("resolved");
   });
 
+  it("keeps wikilink alias and source provenance when resolving later", () => {
+    core.upsertWikiPage(
+      {
+        pageId: "contract-process",
+        title: "Contract process",
+        body: "Use [[Legal Review|legal review]] before sending documents.",
+        tags: []
+      },
+      "source-1"
+    );
+
+    const unresolved = core.listWikiLinks("contract-process").outgoing[0];
+    expect(unresolved?.toPageId).toBe("legal-review");
+    expect(unresolved?.anchorText).toBe("legal review");
+    expect(unresolved?.sourceId).toBe("source-1");
+    expect(unresolved?.status).toBe("unresolved");
+
+    core.upsertWikiPage({
+      pageId: "legal-review",
+      title: "Legal Review",
+      body: "Review legal risk before sending.",
+      tags: []
+    });
+
+    const resolved = core.listWikiLinks("contract-process").outgoing[0];
+    const backlink = core.listWikiLinks("legal-review").backlinks[0];
+
+    expect(resolved?.status).toBe("resolved");
+    expect(resolved?.sourceId).toBe("source-1");
+    expect(resolved?.anchorText).toBe("legal review");
+    expect(backlink?.sourceId).toBe("source-1");
+  });
+
+  it("rolls back task side effects when proposal apply fails", () => {
+    const result = core.ingestSource({
+      sourceType: "manual_note",
+      sourceTitle: "Contract request",
+      content: "Create an agreement draft.",
+      metadata: {},
+      processNow: true
+    });
+    const taskProposal = result.proposals.find(
+      (proposal) => proposal.proposalType === "task_create"
+    );
+
+    expect(taskProposal).toBeDefined();
+
+    const originalMarkProposalApplied = core.repo.markProposalApplied.bind(core.repo);
+    core.repo.markProposalApplied = (() => {
+      throw new Error("forced apply failure");
+    }) as typeof core.repo.markProposalApplied;
+
+    expect(() => core.applyProposal(taskProposal!.id)).toThrow("forced apply failure");
+
+    core.repo.markProposalApplied = originalMarkProposalApplied;
+
+    expect(core.listTasks()).toHaveLength(0);
+    expect(core.getProposal(taskProposal!.id)?.status).toBe("pending");
+  });
+
+  it("validates proposal payload before applying side effects", () => {
+    const proposal = core.repo.createProposal({
+      proposalType: "task_create",
+      sourceIds: [],
+      taskId: null,
+      destination: { kind: "task" },
+      payload: { description: "Missing title" },
+      evidence: {},
+      rationale: "Invalid payload fixture",
+      createdBy: "test"
+    });
+
+    expect(() => core.applyProposal(proposal.id)).toThrow();
+    expect(core.listTasks()).toHaveLength(0);
+    expect(core.getProposal(proposal.id)?.status).toBe("pending");
+  });
+
   it("does not reject proposals that were already applied", () => {
     const result = core.ingestSource({
       sourceType: "manual_note",

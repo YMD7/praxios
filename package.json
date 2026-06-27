@@ -11,7 +11,7 @@
     "dev:worker": "pnpm --filter @praxios/worker dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm --filter @praxios/core test",
+    "test": "pnpm -r --if-present test",
     "db:init": "pnpm --filter @praxios/core db:init"
   },
   "devDependencies": {

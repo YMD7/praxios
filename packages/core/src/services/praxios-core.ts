@@ -4,6 +4,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { createRuntimeConfig, type RuntimeConfig, type RuntimeConfigInput } from "../config.js";
 import { openDatabase, type PraxiosDatabase } from "../db/client.js";
+import { ConflictError, NotFoundError } from "../errors.js";
+import { parseProposalPayload } from "../proposals/definitions.js";
+import {
+  DeterministicProposalGenerator,
+  type ProposalGenerator
+} from "../proposals/generator.js";
 import { PraxiosRepository } from "../repository.js";
 import {
   createTaskSchema,
@@ -19,7 +25,7 @@ import {
   type UpdateTaskInput,
   type UpsertWikiPageInput
 } from "../types.js";
-import { createPageIdFromTitle, extractWikiLinks } from "../wiki-links.js";
+import { extractWikiLinks } from "../wiki-links.js";
 
 export interface IngestSourceResult {
   source: Source;
@@ -31,19 +37,25 @@ export interface ProcessPendingSourcesResult {
   proposalCount: number;
 }
 
+export interface PraxiosCoreOptions extends RuntimeConfigInput {
+  proposalGenerator?: ProposalGenerator;
+}
+
 export class PraxiosCore {
   readonly config: RuntimeConfig;
   readonly db: PraxiosDatabase;
   readonly repo: PraxiosRepository;
   private readonly sqlite: Database.Database;
+  private readonly proposalGenerator: ProposalGenerator;
 
-  constructor(input: RuntimeConfigInput = {}) {
+  constructor(input: PraxiosCoreOptions = {}) {
     this.config = createRuntimeConfig(input);
     const opened = openDatabase(this.config);
 
     this.sqlite = opened.sqlite;
     this.db = opened.db;
     this.repo = new PraxiosRepository(this.db);
+    this.proposalGenerator = input.proposalGenerator ?? new DeterministicProposalGenerator();
   }
 
   close(): void {
@@ -56,6 +68,10 @@ export class PraxiosCore {
 
   getTask(id: string) {
     return this.repo.getTask(id);
+  }
+
+  getProposal(id: string) {
+    return this.repo.getProposal(id);
   }
 
   createTask(input: CreateTaskInput) {
@@ -103,7 +119,7 @@ export class PraxiosCore {
   readSourceContent(id: string): string {
     const source = this.repo.getSource(id);
     if (!source) {
-      throw new Error(`Source not found: ${id}`);
+      throw new NotFoundError(`Source not found: ${id}`);
     }
 
     return fs.readFileSync(source.sourcePath, "utf8");
@@ -172,7 +188,7 @@ export class PraxiosCore {
   generateProposalsForSource(sourceId: string): Proposal[] {
     const source = this.repo.getSource(sourceId);
     if (!source) {
-      throw new Error(`Source not found: ${sourceId}`);
+      throw new NotFoundError(`Source not found: ${sourceId}`);
     }
 
     if (source.processedAt) {
@@ -180,68 +196,9 @@ export class PraxiosCore {
     }
 
     const content = this.readSourceContent(source.id);
-    const summary = summarizeText(content);
-    const excerpt = content.slice(0, 600);
-    const taskId = getMetadataString(source.metadata, "taskId");
-    const proposals: Proposal[] = [];
-
-    if (taskId) {
-      proposals.push(
-        this.repo.createProposal({
-          proposalType: "task_context",
-          sourceIds: [source.id],
-          taskId,
-          destination: { kind: "task", taskId },
-          payload: {
-            title: source.sourceTitle,
-            summary,
-            occurredAt: source.occurredAt,
-            relevanceScore: 0.82
-          },
-          evidence: { sourceId: source.id, excerpt },
-          rationale: "既存タスクに関連する Source として取り込まれたため、Context 追加を提案する。",
-          createdBy: "ai-worker"
-        })
-      );
-    } else {
-      proposals.push(
-        this.repo.createProposal({
-          proposalType: "task_create",
-          sourceIds: [source.id],
-          taskId: null,
-          destination: { kind: "task" },
-          payload: {
-            title: source.sourceTitle,
-            description: summary,
-            priority: "Normal",
-            completionCriteria: "Source の内容を確認し、完了条件を確定する。"
-          },
-          evidence: { sourceId: source.id, excerpt },
-          rationale: "未紐づけの Source から作業トリガーを検出したため、Task 作成を提案する。",
-          createdBy: "ai-worker"
-        })
-      );
-    }
-
-    const pageId = createPageIdFromTitle(source.sourceTitle) || `source-${source.id.slice(0, 8)}`;
-
-    proposals.push(
-      this.repo.createProposal({
-        proposalType: "wiki_update",
-        sourceIds: [source.id],
-        taskId,
-        destination: { kind: "wiki", pageId },
-        payload: {
-          pageId,
-          title: source.sourceTitle,
-          body: `# ${source.sourceTitle}\n\n${summary}\n\n## Evidence\n\nSource: ${source.id}`,
-          tags: ["source", source.sourceType]
-        },
-        evidence: { sourceId: source.id, excerpt },
-        rationale: "Source から再利用可能な業務知識を抽出し、Wiki 更新を提案する。",
-        createdBy: "ai-worker"
-      })
-    );
+    const proposals = this.proposalGenerator
+      .generate({ source, content })
+      .map((proposal) => this.repo.createProposal(proposal));
 
     this.repo.markSourceProcessed(source.id);
 
@@ -253,12 +210,22 @@ export class PraxiosCore {
   }
 
   applyProposal(id: string, reviewerId = "local-user", reviewComment: string | null = null) {
+    return this.runInTransaction(() =>
+      this.applyProposalWithinTransaction(id, reviewerId, reviewComment)
+    );
+  }
+
+  private applyProposalWithinTransaction(
+    id: string,
+    reviewerId: string,
+    reviewComment: string | null
+  ) {
     const proposal = this.repo.getProposal(id);
     if (!proposal) {
-      throw new Error(`Proposal not found: ${id}`);
+      throw new NotFoundError(`Proposal not found: ${id}`);
     }
     if (proposal.status !== "pending") {
-      throw new Error(`Proposal is not pending: ${id}`);
+      throw new ConflictError(`Proposal is not pending: ${id}`, "proposal_not_pending");
     }
 
     let subjectType = "proposal";
@@ -266,18 +233,15 @@ export class PraxiosCore {
     let appliedTaskId: string | undefined;
 
     if (proposal.proposalType === "task_create") {
+      const payload = parseProposalPayload("task_create", proposal.payload);
       const task = this.repo.createTask({
-        title: getPayloadString(proposal.payload, "title", "Untitled task"),
-        description: getPayloadString(proposal.payload, "description", ""),
+        title: payload.title,
+        description: payload.description,
         status: "New",
-        priority: getPayloadPriority(proposal.payload),
-        dueDate: null,
+        priority: payload.priority,
+        dueDate: payload.dueDate ?? null,
         triggerId: proposal.sourceIds[0] ?? null,
-        completionCriteria: getPayloadString(
-          proposal.payload,
-          "completionCriteria",
-          "完了条件を確定する。"
-        )
+        completionCriteria: payload.completionCriteria
       });
 
       subjectType = "task";
@@ -287,16 +251,20 @@ export class PraxiosCore {
 
     if (proposal.proposalType === "task_context") {
       if (!proposal.taskId) {
-        throw new Error(`Task context proposal has no taskId: ${proposal.id}`);
+        throw new ConflictError(
+          `Task context proposal has no taskId: ${proposal.id}`,
+          "proposal_missing_task"
+        );
       }
 
+      const payload = parseProposalPayload("task_context", proposal.payload);
       this.repo.createContextItem({
         taskId: proposal.taskId,
         sourceId: proposal.sourceIds[0] ?? "",
-        title: getPayloadString(proposal.payload, "title", "Context"),
-        summary: getPayloadString(proposal.payload, "summary", ""),
-        occurredAt: getPayloadNullableString(proposal.payload, "occurredAt"),
-        relevanceScore: getPayloadNumber(proposal.payload, "relevanceScore", 0.7),
+        title: payload.title,
+        summary: payload.summary,
+        occurredAt: payload.occurredAt ?? null,
+        relevanceScore: payload.relevanceScore,
         evidence: proposal.evidence
       });
 
@@ -305,11 +273,12 @@ export class PraxiosCore {
     }
 
     if (proposal.proposalType === "wiki_update") {
+      const payload = parseProposalPayload("wiki_update", proposal.payload);
       const page = this.upsertWikiPage({
-        pageId: getPayloadString(proposal.payload, "pageId", `proposal-${proposal.id}`),
-        title: getPayloadString(proposal.payload, "title", "Untitled page"),
-        body: getPayloadString(proposal.payload, "body", ""),
-        tags: getPayloadStringArray(proposal.payload, "tags")
+        pageId: payload.pageId,
+        title: payload.title,
+        body: payload.body,
+        tags: payload.tags
       }, proposal.sourceIds[0] ?? null);
 
       subjectType = "wiki_page";
@@ -333,27 +302,29 @@ export class PraxiosCore {
   }
 
   rejectProposal(id: string, reviewerId = "local-user", reviewComment: string | null = null) {
-    const proposal = this.repo.getProposal(id);
-    if (!proposal) {
-      throw new Error(`Proposal not found: ${id}`);
-    }
-    if (proposal.status !== "pending") {
-      throw new Error(`Proposal is not pending: ${id}`);
-    }
-
-    const rejected = this.repo.rejectProposal(id, reviewerId, reviewComment);
-
-    this.repo.createAuditEvent({
-      actor: reviewerId,
-      eventType: "proposal.rejected",
-      subjectType: "proposal",
-      subjectId: id,
-      payload: {
-        proposalType: proposal.proposalType
+    return this.runInTransaction(() => {
+      const proposal = this.repo.getProposal(id);
+      if (!proposal) {
+        throw new NotFoundError(`Proposal not found: ${id}`);
       }
-    });
+      if (proposal.status !== "pending") {
+        throw new ConflictError(`Proposal is not pending: ${id}`, "proposal_not_pending");
+      }
 
-    return rejected;
+      const rejected = this.repo.rejectProposal(id, reviewerId, reviewComment);
+
+      this.repo.createAuditEvent({
+        actor: reviewerId,
+        eventType: "proposal.rejected",
+        subjectType: "proposal",
+        subjectId: id,
+        payload: {
+          proposalType: proposal.proposalType
+        }
+      });
+
+      return rejected;
+    });
   }
 
   listWikiPages() {
@@ -401,14 +372,10 @@ export class PraxiosCore {
 
     this.repo.replaceWikiLinks(pageId, links, sourceId);
   }
-}
 
-function summarizeText(content: string): string {
-  const normalized = content.replace(/\s+/g, " ").trim();
-  if (normalized.length <= 500) {
-    return normalized;
+  private runInTransaction<T>(callback: () => T): T {
+    return this.sqlite.transaction(callback)();
   }
-  return `${normalized.slice(0, 500)}...`;
 }
 
 function toJsonObject(value: Record<string, unknown>): JsonObject {
@@ -420,40 +387,4 @@ function toJsonObject(value: Record<string, unknown>): JsonObject {
   }
 
   return {};
-}
-
-function getMetadataString(metadata: JsonObject, key: string): string | null {
-  const value = metadata[key];
-  return typeof value === "string" && value.length > 0 ? value : null;
-}
-
-function getPayloadString(payload: JsonObject, key: string, fallback: string): string {
-  const value = payload[key];
-  return typeof value === "string" && value.length > 0 ? value : fallback;
-}
-
-function getPayloadNullableString(payload: JsonObject, key: string): string | null {
-  const value = payload[key];
-  return typeof value === "string" && value.length > 0 ? value : null;
-}
-
-function getPayloadNumber(payload: JsonObject, key: string, fallback: number): number {
-  const value = payload[key];
-  return typeof value === "number" ? value : fallback;
-}
-
-function getPayloadPriority(payload: JsonObject): "Low" | "Normal" | "High" | "Urgent" {
-  const value = payload.priority;
-  if (value === "Low" || value === "High" || value === "Urgent") {
-    return value;
-  }
-  return "Normal";
-}
-
-function getPayloadStringArray(payload: JsonObject, key: string): string[] {
-  const value = payload[key];
-  if (!Array.isArray(value)) {
-    return [];
-  }
-  return value.filter((item): item is string => typeof item === "string");
 }

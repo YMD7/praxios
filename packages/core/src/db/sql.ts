@@ -1,5 +1,8 @@
 import type Database from "better-sqlite3";
 
+// Drizzle schema in `schema.ts` is the canonical structured data model.
+// This SQL is a temporary MVP bootstrap mirror for `db:init` until migration
+// generation is introduced; do not treat it as a second source of truth.
 export const schemaSql = `
 CREATE TABLE IF NOT EXISTS tasks (
   id TEXT PRIMARY KEY,

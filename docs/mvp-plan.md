@@ -95,6 +95,8 @@ Source から Proposal を生成する独立プロセス。MVP では同じ core
 - 構造化データ: `$PROJECT_ROOT/data/praxios.sqlite`
 - Source 正本: `$PROJECT_ROOT/data/sources/<sourceId>/raw.txt`
 - Source hash: SHA-256
+- DB schema の正本: `packages/core/src/db/schema.ts`
+- `packages/core/src/db/sql.ts`: `db:init` 用の暫定 bootstrap SQL
 
 ## 初期 Proposal 種別
 
