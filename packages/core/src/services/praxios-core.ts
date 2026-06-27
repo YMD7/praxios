@@ -127,6 +127,10 @@ export class PraxiosCore {
 
   ingestSource(rawInput: IngestSourceInput): IngestSourceResult {
     const input = ingestSourceSchema.parse(rawInput);
+    if (input.taskId && !this.repo.getTask(input.taskId)) {
+      throw new NotFoundError(`Task not found: ${input.taskId}`);
+    }
+
     const id = randomUUID();
     const capturedAt = new Date().toISOString();
     const sourceDir = path.join(this.config.sourceDir, id);
@@ -195,6 +199,11 @@ export class PraxiosCore {
       return [];
     }
 
+    const taskId = getMetadataString(source.metadata, "taskId");
+    if (taskId && !this.repo.getTask(taskId)) {
+      throw new NotFoundError(`Task not found: ${taskId}`);
+    }
+
     const content = this.readSourceContent(source.id);
     const proposals = this.proposalGenerator
       .generate({ source, content })
@@ -255,6 +264,9 @@ export class PraxiosCore {
           `Task context proposal has no taskId: ${proposal.id}`,
           "proposal_missing_task"
         );
+      }
+      if (!this.repo.getTask(proposal.taskId)) {
+        throw new NotFoundError(`Task not found: ${proposal.taskId}`);
       }
 
       const payload = parseProposalPayload("task_context", proposal.payload);
@@ -387,4 +399,9 @@ function toJsonObject(value: Record<string, unknown>): JsonObject {
   }
 
   return {};
+}
+
+function getMetadataString(metadata: JsonObject, key: string): string | null {
+  const value = metadata[key];
+  return typeof value === "string" && value.length > 0 ? value : null;
 }

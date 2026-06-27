@@ -44,6 +44,22 @@ describe("PraxiosCore", () => {
     expect(tasks[0]?.title).toBe("Contract request");
   });
 
+  it("rejects source ingest linked to a missing task", () => {
+    expect(() =>
+      core.ingestSource({
+        sourceType: "manual_note",
+        sourceTitle: "Unknown task source",
+        content: "Attach this note to a missing task.",
+        metadata: {},
+        taskId: "missing-task",
+        processNow: true
+      })
+    ).toThrow("Task not found");
+
+    expect(core.listSources()).toHaveLength(0);
+    expect(core.listProposals()).toHaveLength(0);
+  });
+
   it("applies wiki update proposals and records unresolved links", () => {
     const result = core.ingestSource({
       sourceType: "manual_note",
@@ -168,6 +184,28 @@ describe("PraxiosCore", () => {
 
     expect(() => core.applyProposal(proposal.id)).toThrow();
     expect(core.listTasks()).toHaveLength(0);
+    expect(core.getProposal(proposal.id)?.status).toBe("pending");
+  });
+
+  it("does not apply task context proposals for missing tasks", () => {
+    const proposal = core.repo.createProposal({
+      proposalType: "task_context",
+      sourceIds: [],
+      taskId: "missing-task",
+      destination: { kind: "task", taskId: "missing-task" },
+      payload: {
+        title: "Context",
+        summary: "Orphan context fixture.",
+        relevanceScore: 0.5
+      },
+      evidence: {},
+      rationale: "Invalid task context fixture",
+      createdBy: "test"
+    });
+
+    expect(() => core.applyProposal(proposal.id)).toThrow("Task not found");
+
+    expect(core.listContextItems("missing-task")).toHaveLength(0);
     expect(core.getProposal(proposal.id)?.status).toBe("pending");
   });
 
