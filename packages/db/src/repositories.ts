@@ -41,7 +41,7 @@ export function createRepositories(db: Db): Repositories {
       async create(input): Promise<Task> {
         const rows = await db
           .insert(tasks)
-          .values({ id: input.id ?? randomUUID(), ...input })
+          .values({ ...input, id: input.id ?? randomUUID() })
           .returning();
         return rows[0]!;
       },
@@ -65,7 +65,7 @@ export function createRepositories(db: Db): Repositories {
       async create(input): Promise<Source> {
         const rows = await db
           .insert(sources)
-          .values({ id: input.id ?? randomUUID(), ...input })
+          .values({ ...input, id: input.id ?? randomUUID() })
           .returning();
         return rows[0]!;
       },
@@ -82,7 +82,7 @@ export function createRepositories(db: Db): Repositories {
       async create(input): Promise<ContextItem> {
         const rows = await db
           .insert(contextItems)
-          .values({ id: input.id ?? randomUUID(), ...input })
+          .values({ ...input, id: input.id ?? randomUUID() })
           .returning();
         return rows[0]!;
       },
@@ -107,7 +107,7 @@ export function createRepositories(db: Db): Repositories {
       async create(input): Promise<Proposal> {
         const rows = await db
           .insert(proposals)
-          .values({ id: input.id ?? randomUUID(), ...input })
+          .values({ ...input, id: input.id ?? randomUUID() })
           .returning();
         return rows[0]!;
       },
@@ -133,7 +133,7 @@ export function createRepositories(db: Db): Repositories {
       async createPage(input): Promise<WikiPage> {
         const rows = await db
           .insert(wikiPages)
-          .values({ id: input.id ?? randomUUID(), ...input })
+          .values({ ...input, id: input.id ?? randomUUID() })
           .returning();
         return rows[0]!;
       },
