@@ -56,6 +56,9 @@ export const api = {
   async listTaskContext(taskId: string) {
     return request<{ contextItems: ContextItem[] }>(`/tasks/${taskId}/context`);
   },
+  async listTaskSources(taskId: string) {
+    return request<{ sources: Source[] }>(`/tasks/${taskId}/sources`);
+  },
   async listTaskProposals(taskId: string) {
     return request<{ proposals: Proposal[] }>(`/tasks/${taskId}/proposals`);
   },

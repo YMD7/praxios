@@ -1,20 +1,20 @@
-import type { Proposal, Task } from "@praxios/core";
-import { Check, FileText, RefreshCw, Send, SendHorizonal, X } from "lucide-react";
+import type { Source, Task } from "@praxios/core";
+import { ExternalLink, FileText, RefreshCw } from "lucide-react";
 import type {
-  FormEvent,
   KeyboardEvent as ReactKeyboardEvent,
   PointerEvent as ReactPointerEvent,
   ReactNode
 } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { AgentTerminalPanel } from "@/components/terminal/AgentTerminalPanel";
 import type { AgentTerminalPanelHandle } from "@/components/terminal/AgentTerminalPanel";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api, type TaskWorkspaceInfo } from "@/api";
 import type { TaskWorkbenchTab } from "./types";
 
-const shareSnippet = "Context was updated for this task.";
 const defaultContextPercent = 42;
 const minContextPaneWidth = 320;
 const minAiPaneWidth = 420;
@@ -31,44 +31,24 @@ export function TaskWorkbenchPanel({
   const terminalRef = useRef<AgentTerminalPanelHandle | null>(null);
   const [task, setTask] = useState<Task | null>(null);
   const [workspace, setWorkspace] = useState<TaskWorkspaceInfo | null>(null);
-  const [proposals, setProposals] = useState<Proposal[]>([]);
-  const [contextCount, setContextCount] = useState(0);
-  const [relatedSourceCount, setRelatedSourceCount] = useState(0);
-  const [contextUpdated, setContextUpdated] = useState(false);
+  const [sources, setSources] = useState<Source[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const pendingContextProposals = useMemo(
-    () =>
-      proposals.filter(
-        (proposal) => proposal.proposalType === "task_context" && proposal.status === "pending"
-      ),
-    [proposals]
-  );
-  const pendingApprovalCount = useMemo(
-    () => proposals.filter((proposal) => proposal.status === "pending").length,
-    [proposals]
-  );
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const [taskResult, contextResult, proposalResult, workspaceResult] = await Promise.all([
+      const [taskResult, workspaceResult, sourceResult] = await Promise.all([
         api.getTask(tab.taskId),
-        api.listTaskContext(tab.taskId),
-        api.listTaskProposals(tab.taskId),
-        api.getTaskWorkspace(tab.taskId)
+        api.getTaskWorkspace(tab.taskId),
+        api.listTaskSources(tab.taskId)
       ]);
 
       setTask(taskResult.task);
       setWorkspace(workspaceResult.workspace);
-      setProposals(proposalResult.proposals);
-      setContextCount(contextResult.contextItems.length);
-      setRelatedSourceCount(
-        new Set(contextResult.contextItems.map((item) => item.sourceId).filter(Boolean)).size
-      );
+      setSources(sourceResult.sources);
       onTaskLoaded(taskResult.task);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Failed to load task");
@@ -86,69 +66,16 @@ export function TaskWorkbenchPanel({
     return () => onRegisterTerminal(null);
   }, [onRegisterTerminal]);
 
-  async function applyProposal(proposalId: string) {
-    setError(null);
-    try {
-      await api.applyProposal(proposalId);
-      setContextUpdated(true);
-      await load();
-    } catch (applyError) {
-      setError(applyError instanceof Error ? applyError.message : "Failed to apply proposal");
-    }
-  }
-
-  async function rejectProposal(proposalId: string) {
-    setError(null);
-    try {
-      await api.rejectProposal(proposalId);
-      await load();
-    } catch (rejectError) {
-      setError(rejectError instanceof Error ? rejectError.message : "Failed to reject proposal");
-    }
-  }
-
-  async function ingestSource(input: {
-    sourceTitle: string;
-    sourceType: string;
-    content: string;
-  }) {
-    setError(null);
-    try {
-      await api.ingestSource({
-        ...input,
-        taskId: tab.taskId,
-        processNow: true
-      });
-      await load();
-    } catch (ingestError) {
-      setError(ingestError instanceof Error ? ingestError.message : "Failed to ingest source");
-      throw ingestError;
-    }
-  }
-
-  function shareToAi() {
-    terminalRef.current?.insertText(shareSnippet);
-    setContextUpdated(false);
-  }
-
   return (
     <TaskSplitLayout storageKey={`praxios-task-workbench-${tab.taskId}`}>
       {{
         context: (
           <div className="h-full min-h-0">
             <ContextPane
-              contextCount={contextCount}
-              contextUpdated={contextUpdated}
               error={error}
               loading={loading}
-              onApplyProposal={(proposalId) => void applyProposal(proposalId)}
-              onIngestSource={ingestSource}
               onRefresh={() => void load()}
-              onRejectProposal={(proposalId) => void rejectProposal(proposalId)}
-              onShareToAi={shareToAi}
-              pendingApprovalCount={pendingApprovalCount}
-              pendingContextProposals={pendingContextProposals}
-              relatedSourceCount={relatedSourceCount}
+              sources={sources}
               task={task}
               workspace={workspace}
             />
@@ -309,37 +236,17 @@ function clampContextPercent(contextPercent: number) {
 }
 
 function ContextPane({
-  contextCount,
-  contextUpdated,
   error,
   loading,
-  onApplyProposal,
-  onIngestSource,
   onRefresh,
-  onRejectProposal,
-  onShareToAi,
-  pendingApprovalCount,
-  pendingContextProposals,
-  relatedSourceCount,
+  sources,
   task,
   workspace
 }: {
-  contextCount: number;
-  contextUpdated: boolean;
   error: string | null;
   loading: boolean;
-  onApplyProposal: (proposalId: string) => void;
-  onIngestSource: (input: {
-    sourceTitle: string;
-    sourceType: string;
-    content: string;
-  }) => Promise<void>;
   onRefresh: () => void;
-  onRejectProposal: (proposalId: string) => void;
-  onShareToAi: () => void;
-  pendingApprovalCount: number;
-  pendingContextProposals: Proposal[];
-  relatedSourceCount: number;
+  sources: Source[];
   task: Task | null;
   workspace: TaskWorkspaceInfo | null;
 }) {
@@ -351,221 +258,101 @@ function ContextPane({
             <h1 className="truncate text-base font-semibold tracking-normal">
               {task?.title ?? "Loading task..."}
             </h1>
-            {contextUpdated && (
-              <span className="inline-flex h-6 shrink-0 items-center rounded-full bg-warning/15 px-2 text-xs font-semibold text-warning">
-                Context updated
-              </span>
-            )}
           </div>
           <p className="truncate text-xs text-muted-foreground">
             {workspace?.path ?? "Preparing workspace"}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <Button
-            disabled={!contextUpdated}
-            onClick={onShareToAi}
-            size="sm"
-            title="Share context update to AI"
-            type="button"
-            variant="outline"
-          >
-            <SendHorizonal aria-hidden="true" className="h-4 w-4" />
-            Share to AI
-          </Button>
           <Button onClick={onRefresh} size="icon" title="Refresh context" type="button" variant="ghost">
             <RefreshCw aria-hidden="true" className="h-4 w-4" />
           </Button>
         </div>
       </header>
 
-      <ScrollArea className="min-h-0 flex-1">
-        <div className="grid gap-4 p-4">
-          {error && (
-            <div className="error text-sm">{error}</div>
-          )}
-
-          <section className="grid gap-2">
-            <h2 className="text-sm font-semibold tracking-normal">Task</h2>
-            <div className="grid grid-cols-3 gap-2 text-sm">
-              <Metric label="Status" value={task?.status ?? "-"} />
-              <Metric label="Priority" value={task?.priority ?? "-"} />
-              <Metric label="Due" value={task?.dueDate ?? "-"} />
-            </div>
-            <p className="text-sm leading-6 text-muted-foreground">
-              {task?.description || "No description"}
-            </p>
-          </section>
-
-          <SourceIngestForm disabled={loading || !task} onIngestSource={onIngestSource} />
-
-          <section className="grid gap-2">
-            <h2 className="text-sm font-semibold tracking-normal">Work Queue</h2>
-            <div className="grid grid-cols-3 gap-2 text-sm">
-              <Metric label="Context" value={String(contextCount)} />
-              <Metric label="Sources" value={String(relatedSourceCount)} />
-              <Metric label="Approvals" value={String(pendingApprovalCount)} />
-            </div>
-            <PendingContextUpdates
-              onApply={onApplyProposal}
-              onReject={onRejectProposal}
-              proposals={pendingContextProposals}
-            />
-          </section>
-
-          <section className="grid gap-2">
-            <h2 className="text-sm font-semibold tracking-normal">context.md</h2>
-            <pre className="max-h-[52vh] whitespace-pre-wrap rounded-md border p-3 text-xs leading-5">
-              {loading && !workspace
-                ? "Loading context..."
-                : workspace?.context ?? "No context file"}
-            </pre>
-          </section>
+      <Tabs className="flex min-h-0 flex-1 flex-col" defaultValue="context">
+        <div className="shrink-0 border-b bg-card px-4 py-2">
+          <TabsList>
+            <TabsTrigger value="context">Context</TabsTrigger>
+            <TabsTrigger value="sources">Sources</TabsTrigger>
+          </TabsList>
         </div>
-      </ScrollArea>
+        <ScrollArea className="min-h-0 flex-1">
+          <TabsContent className="m-0 grid gap-4 p-4" value="context">
+            {error && <div className="error text-sm">{error}</div>}
+            <section className="grid gap-2">
+              <h2 className="text-sm font-semibold tracking-normal">context.md</h2>
+              <pre className="min-h-[60vh] whitespace-pre-wrap rounded-md border bg-card p-3 text-xs leading-5">
+                {loading && !workspace
+                  ? "Loading context..."
+                  : workspace?.context ?? "No context file"}
+              </pre>
+            </section>
+          </TabsContent>
+          <TabsContent className="m-0 p-4" value="sources">
+            <TaskSourceList loading={loading} sources={sources} />
+          </TabsContent>
+        </ScrollArea>
+      </Tabs>
     </section>
   );
 }
 
-function SourceIngestForm({
-  disabled,
-  onIngestSource
-}: {
-  disabled: boolean;
-  onIngestSource: (input: {
-    sourceTitle: string;
-    sourceType: string;
-    content: string;
-  }) => Promise<void>;
-}) {
-  const [sourceTitle, setSourceTitle] = useState("");
-  const [sourceType, setSourceType] = useState("manual_note");
-  const [content, setContent] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSubmitting(true);
-
-    try {
-      await onIngestSource({ sourceTitle, sourceType, content });
-      setSourceTitle("");
-      setContent("");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  return (
-    <form className="grid gap-3 rounded-md border bg-card p-3" onSubmit={(event) => void submit(event)}>
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold tracking-normal">Add Source</h2>
-        <Button disabled={disabled || submitting} size="sm" type="submit">
-          <Send aria-hidden="true" className="h-4 w-4" />
-          Ingest
-        </Button>
-      </div>
-      <label className="grid gap-1 text-xs font-semibold text-muted-foreground">
-        Title
-        <input
-          className="rounded-md border bg-background px-3 py-2 text-sm font-normal text-foreground"
-          disabled={disabled || submitting}
-          onChange={(event) => setSourceTitle(event.target.value)}
-          required
-          value={sourceTitle}
-        />
-      </label>
-      <label className="grid gap-1 text-xs font-semibold text-muted-foreground">
-        Type
-        <select
-          className="rounded-md border bg-background px-3 py-2 text-sm font-normal text-foreground"
-          disabled={disabled || submitting}
-          onChange={(event) => setSourceType(event.target.value)}
-          value={sourceType}
-        >
-          <option value="manual_note">Manual note</option>
-          <option value="slack_message">Slack message</option>
-          <option value="email_thread">Email thread</option>
-          <option value="meeting_note">Meeting note</option>
-        </select>
-      </label>
-      <label className="grid gap-1 text-xs font-semibold text-muted-foreground">
-        Content
-        <textarea
-          className="min-h-28 resize-y rounded-md border bg-background px-3 py-2 text-sm font-normal leading-5 text-foreground"
-          disabled={disabled || submitting}
-          onChange={(event) => setContent(event.target.value)}
-          required
-          value={content}
-        />
-      </label>
-    </form>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0 rounded-md border bg-card p-2">
-      <div className="truncate text-[11px] font-semibold uppercase text-muted-foreground">
-        {label}
-      </div>
-      <div className="truncate text-sm font-semibold">{value}</div>
-    </div>
-  );
-}
-
-function PendingContextUpdates({
-  onApply,
-  onReject,
-  proposals
-}: {
-  onApply: (proposalId: string) => void;
-  onReject: (proposalId: string) => void;
-  proposals: Proposal[];
-}) {
-  if (proposals.length === 0) {
+function TaskSourceList({ loading, sources }: { loading: boolean; sources: Source[] }) {
+  if (loading && sources.length === 0) {
     return (
       <div className="rounded-md border border-dashed bg-card p-3 text-sm text-muted-foreground">
-        No pending context updates
+        Loading sources...
+      </div>
+    );
+  }
+
+  if (sources.length === 0) {
+    return (
+      <div className="rounded-md border border-dashed bg-card p-3 text-sm text-muted-foreground">
+        No sources attached to this task yet.
       </div>
     );
   }
 
   return (
     <div className="grid gap-2">
-      {proposals.map((proposal) => (
-        <article className="grid gap-2 rounded-md border bg-card p-3" key={proposal.id}>
+      {sources.map((source) => (
+        <article className="grid gap-2 rounded-md border bg-card p-3" key={source.id}>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <FileText aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
-              <strong className="truncate text-sm">{getPayloadString(proposal, "title")}</strong>
+              <Link
+                className="truncate text-sm font-semibold text-foreground hover:text-link"
+                to={`/sources/${source.id}`}
+              >
+                {source.sourceTitle}
+              </Link>
             </div>
-            <p className="mt-1 text-sm leading-5 text-muted-foreground">
-              {getPayloadString(proposal, "summary")}
-            </p>
+            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <span>{source.sourceType}</span>
+              <span>{source.provider ?? getSourceChannel(source) ?? "local"}</span>
+              <span>{new Date(source.capturedAt).toLocaleString()}</span>
+            </div>
           </div>
-          <div className="flex justify-end gap-2">
-            <Button onClick={() => onApply(proposal.id)} size="sm" type="button">
-              <Check aria-hidden="true" className="h-4 w-4" />
-              Apply
-            </Button>
-            <Button
-              onClick={() => onReject(proposal.id)}
-              size="sm"
-              type="button"
-              variant="outline"
+          {source.sourceUrl && (
+            <a
+              className="inline-flex min-w-0 items-center gap-1 truncate text-xs text-link"
+              href={source.sourceUrl}
+              rel="noreferrer"
+              target="_blank"
             >
-              <X aria-hidden="true" className="h-4 w-4" />
-              Reject
-            </Button>
-          </div>
+              <ExternalLink aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{source.sourceUrl}</span>
+            </a>
+          )}
         </article>
       ))}
     </div>
   );
 }
 
-function getPayloadString(proposal: Proposal, key: string) {
-  const value = proposal.payload[key];
-  return typeof value === "string" && value.length > 0 ? value : "-";
+function getSourceChannel(source: Source) {
+  const channel = source.metadata.channel;
+  return typeof channel === "string" && channel.length > 0 ? channel : null;
 }

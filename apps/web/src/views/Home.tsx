@@ -1,4 +1,4 @@
-import { ClipboardCheck, Database, ListTodo, Network } from "lucide-react";
+import { Database, ListTodo } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export function Home() {
@@ -20,19 +20,7 @@ export function Home() {
           title="Tasks"
         />
         <HomeLink
-          description="承認待ち Proposal を確認します。Task context は Task tab 内でも承認できます。"
-          href="/approvals"
-          icon={ClipboardCheck}
-          title="Approvals"
-        />
-        <HomeLink
-          description="蓄積した Wiki ページとリンクを確認します。"
-          href="/wiki"
-          icon={Network}
-          title="Wiki"
-        />
-        <HomeLink
-          description="取り込んだ Source の詳細を確認します。"
+          description="AI が取り込んだ元情報とチャンネルを確認します。"
           href="/sources"
           icon={Database}
           title="Sources"

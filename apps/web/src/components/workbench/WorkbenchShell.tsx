@@ -1,9 +1,7 @@
 import {
-  ClipboardCheck,
   Database,
   HomeIcon,
   ListTodo,
-  Network,
   SearchCheck,
   X
 } from "lucide-react";
@@ -20,13 +18,10 @@ import {
 import type { AgentTerminalPanelHandle } from "@/components/terminal/AgentTerminalPanel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ApprovalQueue } from "@/views/ApprovalQueue";
 import { Home } from "@/views/Home";
 import { SourceList } from "@/views/SourceList";
 import { SourceViewer } from "@/views/SourceViewer";
 import { TaskList } from "@/views/TaskList";
-import { WikiList } from "@/views/WikiList";
-import { WikiPageView } from "@/views/WikiPageView";
 import { HOME_TAB_ID, getTaskTabId, type TaskWorkbenchTab, type WorkbenchTab } from "./types";
 import { useWorkbenchTabs } from "./use-workbench-tabs";
 import { TaskWorkbenchPanel } from "./TaskWorkbenchPanel";
@@ -34,9 +29,7 @@ import { TaskWorkbenchPanel } from "./TaskWorkbenchPanel";
 const navigation = [
   { to: "/", label: "Home", icon: HomeIcon },
   { to: "/tasks", label: "Tasks", icon: ListTodo },
-  { to: "/sources", label: "Sources", icon: Database },
-  { to: "/approvals", label: "Approvals", icon: ClipboardCheck },
-  { to: "/wiki", label: "Wiki", icon: Network }
+  { to: "/sources", label: "Sources", icon: Database }
 ];
 
 export function WorkbenchShell() {
@@ -237,9 +230,6 @@ function HomeTabPanel() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/tasks" element={<TaskList />} />
-        <Route path="/approvals" element={<ApprovalQueue />} />
-        <Route path="/wiki" element={<WikiList />} />
-        <Route path="/wiki/:pageId" element={<WikiPageView />} />
         <Route path="/sources" element={<SourceList />} />
         <Route path="/sources/:sourceId" element={<SourceViewer />} />
         <Route path="/tasks/:taskId" element={<Home />} />

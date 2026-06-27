@@ -112,6 +112,10 @@ export function createApp(core = new PraxiosCore()) {
     return c.json({ contextItems: core.listContextItems(c.req.param("taskId")) });
   });
 
+  app.get("/tasks/:taskId/sources", (c) => {
+    return c.json({ sources: core.listTaskSources(c.req.param("taskId")) });
+  });
+
   app.get("/tasks/:taskId/proposals", (c) => {
     return c.json({ proposals: core.listProposals({ taskId: c.req.param("taskId") }) });
   });
