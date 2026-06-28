@@ -259,10 +259,10 @@ function ContextPane({
 
   return (
     <section className="flex h-full min-h-0 flex-col border-r bg-background">
-      <header className="flex shrink-0 items-center justify-between gap-3 border-b bg-card px-4 py-3">
-        <div className="min-w-0">
+      <header className="flex shrink-0 items-start justify-between gap-3 border-b bg-card px-4 py-4">
+        <div className="min-w-0 space-y-1.5">
           <h2 className={sectionHeadingClass}>Task</h2>
-          <div className="mt-1 flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <h1 className="truncate text-base font-semibold tracking-normal">
               {task?.title ?? "Loading task..."}
             </h1>
