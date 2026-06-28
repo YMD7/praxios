@@ -19,7 +19,7 @@ const apiBase = import.meta.env.VITE_API_URL ?? "/api";
 
 const terminalThemes: Record<SystemColorScheme, ITheme> = {
   light: {
-    background: "#f8fafc",
+    background: "#eff0f2",
     black: "#1f2937",
     blue: "#2458a6",
     brightBlack: "#6b7280",

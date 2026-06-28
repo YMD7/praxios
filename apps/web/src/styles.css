@@ -48,11 +48,11 @@
 }
 
 :root {
-  --background: #f6f7f9;
+  --background: #eff0f2;
   --foreground: #18202f;
-  --card: #ffffff;
+  --card: #eff0f2;
   --card-foreground: #18202f;
-  --popover: #ffffff;
+  --popover: #eff0f2;
   --popover-foreground: #18202f;
   --primary: #1f5f46;
   --primary-foreground: #ffffff;
@@ -88,7 +88,7 @@
   --code-background: #0f172a;
   --code-foreground: #dbeafe;
   --inline-code: #394150;
-  --terminal-background: #f8fafc;
+  --terminal-background: #eff0f2;
   --terminal-foreground: #1f2937;
   --terminal-muted: #607089;
   --terminal-border: #d7dee8;
@@ -96,7 +96,7 @@
   --terminal-control-hover: #e2e8f0;
   --terminal-accent: #d9f2e6;
   --terminal-accent-foreground: #1f6a4c;
-  --terminal-tab-active: #ffffff;
+  --terminal-tab-active: #eff0f2;
   --terminal-tab-active-foreground: #172033;
   --radius: 0.5rem;
   color-scheme: light;
