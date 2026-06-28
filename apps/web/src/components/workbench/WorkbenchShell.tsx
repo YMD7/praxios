@@ -37,6 +37,7 @@ export function WorkbenchShell() {
   const location = useLocation();
   const terminalRefs = useRef(new Map<string, AgentTerminalPanelHandle>());
   const initialRouteSyncedRef = useRef(false);
+  const closingTaskIdsRef = useRef(new Set<string>());
   const {
     activeTabId,
     closeTab,
@@ -71,7 +72,18 @@ export function WorkbenchShell() {
     }
 
     if (!routeTaskId) {
+      closingTaskIdsRef.current.clear();
       setActiveTabId(HOME_TAB_ID);
+      return;
+    }
+
+    for (const closingTaskId of closingTaskIdsRef.current) {
+      if (closingTaskId !== routeTaskId) {
+        closingTaskIdsRef.current.delete(closingTaskId);
+      }
+    }
+
+    if (closingTaskIdsRef.current.has(routeTaskId)) {
       return;
     }
 
@@ -98,6 +110,7 @@ export function WorkbenchShell() {
 
   function closeWorkbenchTab(tab: TaskWorkbenchTab) {
     const nextTab = getFallbackTab(openTabs, tab.id, activeTabId);
+    closingTaskIdsRef.current.add(tab.taskId);
     closeTab(tab.id, nextTab.id);
     terminalRefs.current.get(tab.id)?.closeSession();
     terminalRefs.current.delete(tab.id);
