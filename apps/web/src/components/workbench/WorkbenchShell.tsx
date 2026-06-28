@@ -127,7 +127,6 @@ export function WorkbenchShell() {
     const nextTab = getFallbackTab(openTabs, tab.id, activeTabId);
     closingTaskIdsRef.current.add(tab.taskId);
     closeTab(tab.id, nextTab.id);
-    terminalRefs.current.get(tab.id)?.closeSession();
     terminalRefs.current.delete(tab.id);
     setMountedTaskTabIds((current) => removeMountedTabId(current, tab.id));
     navigate(nextTab.kind === "home" ? "/tasks" : `/tasks/${nextTab.taskId}`);
