@@ -218,13 +218,24 @@ function TabStrip({
 }) {
   return (
     <div className="flex h-11 shrink-0 items-end border-b bg-card px-2">
-      {tabs.map((tab) => (
+      {tabs.map((tab, index) => (
         <div
           className={cn(
             "flex h-9 max-w-[240px] items-center gap-1 border border-b-0 px-2",
+            index === 0 && "mr-1",
             activeTabId === tab.id
-              ? "border-border rounded-t-md bg-background text-foreground"
-              : "border-muted-foreground/30 bg-muted/60 text-muted-foreground hover:bg-muted/80"
+              ? cn(
+                  "rounded-t-lg",
+                  tab.kind === "home"
+                    ? "border-border bg-primary/15 text-primary shadow-sm ring-1 ring-primary/20"
+                    : "border-border bg-background text-foreground"
+                )
+              : cn(
+                  "text-muted-foreground hover:bg-muted/80",
+                  tab.kind === "home"
+                    ? "border-border bg-primary/10 text-primary"
+                    : "border-muted-foreground/30 bg-muted/60"
+                )
           )}
           key={tab.id}
         >
