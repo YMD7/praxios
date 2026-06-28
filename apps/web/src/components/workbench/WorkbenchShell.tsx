@@ -22,7 +22,13 @@ import { Home } from "@/views/Home";
 import { SourceList } from "@/views/SourceList";
 import { SourceViewer } from "@/views/SourceViewer";
 import { TaskList } from "@/views/TaskList";
-import { HOME_TAB_ID, getTaskTabId, type TaskWorkbenchTab, type WorkbenchTab } from "./types";
+import {
+  HOME_TAB_ID,
+  getTaskTabId,
+  isFixedWorkbenchTab,
+  type TaskWorkbenchTab,
+  type WorkbenchTab
+} from "./types";
 import { useWorkbenchTabs } from "./use-workbench-tabs";
 import { TaskWorkbenchPanel } from "./TaskWorkbenchPanel";
 
@@ -173,11 +179,14 @@ function GlobalMenu({ onNavigateHome }: { onNavigateHome: () => void }) {
     <aside className="flex w-[76px] shrink-0 flex-col items-center border-r bg-sidebar py-3 text-sidebar-foreground">
       <Link
         aria-label="Praxios Home"
-        className="mb-4 flex h-10 w-10 items-center justify-center rounded-md bg-primary/15 text-primary hover:bg-primary/25"
+        className="mb-4 flex h-10 w-10 items-center justify-center rounded-md bg-primary/15 text-sidebar-foreground hover:bg-primary/25"
         onClick={onNavigateHome}
         to="/"
       >
-        <SearchCheck aria-hidden="true" className="h-5 w-5" />
+        <SearchCheck
+          aria-hidden="true"
+          className="h-5 w-5 !text-sidebar-foreground"
+        />
       </Link>
       <nav className="grid gap-2">
         {navigation.map((item) => {
@@ -187,7 +196,7 @@ function GlobalMenu({ onNavigateHome }: { onNavigateHome: () => void }) {
               aria-label={item.label}
               className={({ isActive }) =>
                 cn(
-                  "flex h-11 w-11 items-center justify-center rounded-md text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                  "flex h-11 w-11 items-center justify-center rounded-md text-sidebar-foreground hover:bg-sidebar-accent",
                   isActive && "bg-sidebar-active text-sidebar-foreground"
                 )
               }
@@ -196,7 +205,10 @@ function GlobalMenu({ onNavigateHome }: { onNavigateHome: () => void }) {
               title={item.label}
               to={item.to}
             >
-              <Icon aria-hidden="true" className="h-5 w-5" />
+              <Icon
+                aria-hidden="true"
+                className="h-5 w-5 !text-sidebar-foreground"
+              />
             </NavLink>
           );
         })}
@@ -217,39 +229,53 @@ function TabStrip({
   tabs: WorkbenchTab[];
 }) {
   return (
-    <div className="flex h-11 shrink-0 items-end gap-1 border-b bg-card px-2">
-      {tabs.map((tab) => (
-        <div
-          className={cn(
-            "mb-[-1px] flex h-9 max-w-[240px] items-center gap-1 rounded-t-md border px-2",
-            activeTabId === tab.id
-              ? "border-border border-b-background bg-background text-foreground"
-              : "border-transparent bg-muted/60 text-muted-foreground hover:bg-muted"
-          )}
-          key={tab.id}
-        >
-          <button
-            className="min-w-0 flex-1 truncate px-1 text-left text-sm font-medium"
-            onClick={() => onActivate(tab)}
-            type="button"
+    <div className="flex h-11 shrink-0 items-end border-b bg-card px-2">
+      {tabs.map((tab, index) => {
+        const fixed = isFixedWorkbenchTab(tab);
+        return (
+          <div
+            className={cn(
+              "flex h-9 max-w-[240px] items-center gap-1 border border-b-0 px-2",
+              index === 0 && "mr-1",
+              activeTabId === tab.id
+                ? cn(
+                    "rounded-t-lg",
+                    fixed
+                      ? "border-border bg-primary/15 text-primary shadow-sm ring-1 ring-primary/20"
+                      : "border-border bg-background text-foreground"
+                  )
+                : cn(
+                    "text-muted-foreground hover:bg-muted/80",
+                    fixed
+                      ? "border-border bg-primary/10 text-primary"
+                      : "border-muted-foreground/30 bg-muted/60"
+                  )
+            )}
+            key={tab.id}
           >
-            {tab.title}
-          </button>
-          {tab.kind === "task" && (
-            <Button
-              aria-label={`Close ${tab.title}`}
-              className="h-6 w-6 shrink-0 rounded-md p-0"
-              onClick={() => onClose(tab)}
-              size="icon"
-              title="Close tab"
+            <button
+              className="min-w-0 flex-1 truncate px-1 text-left text-sm font-medium"
+              onClick={() => onActivate(tab)}
               type="button"
-              variant="ghost"
             >
-              <X aria-hidden="true" className="h-3.5 w-3.5" />
-            </Button>
-          )}
-        </div>
-      ))}
+              {tab.title}
+            </button>
+            {!fixed && (
+              <Button
+                aria-label={`Close ${tab.title}`}
+                className="h-6 w-6 shrink-0 rounded-md p-0"
+                onClick={() => onClose(tab)}
+                size="icon"
+                title="Close tab"
+                type="button"
+                variant="ghost"
+              >
+                <X aria-hidden="true" className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

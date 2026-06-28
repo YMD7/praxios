@@ -64,16 +64,16 @@
   --accent-foreground: #18202f;
   --destructive: #b42318;
   --destructive-foreground: #ffffff;
-  --border: #d8dee8;
+  --border: #b5c3d6;
   --input: #cbd3df;
   --ring: #4f7fbd;
   --link: #2458a6;
   --focus: #dbe8ff;
-  --sidebar: #18202f;
-  --sidebar-foreground: #f8fafc;
-  --sidebar-muted: #aeb9c8;
-  --sidebar-accent: #263244;
-  --sidebar-active: #314052;
+  --sidebar: #e8edf5;
+  --sidebar-foreground: #18202f;
+  --sidebar-muted: #5f6e85;
+  --sidebar-accent: #d7e3f2;
+  --sidebar-active: #c6d6ee;
   --button-secondary: #eef2f7;
   --button-secondary-foreground: #2d3748;
   --button-secondary-hover: #e1e7f0;
@@ -85,18 +85,18 @@
   --error-border: #f1c0bd;
   --error-background: #fff1f0;
   --error-foreground: #9b2f28;
-  --code-background: #0f172a;
-  --code-foreground: #dbeafe;
-  --inline-code: #394150;
+  --code-background: #f3f6fb;
+  --code-foreground: #1f2937;
+  --inline-code: #2f3f55;
   --terminal-background: #eff0f2;
   --terminal-foreground: #1f2937;
   --terminal-muted: #607089;
-  --terminal-border: #d7dee8;
+  --terminal-border: #b5c3d6;
   --terminal-control: #eef3f8;
   --terminal-control-hover: #e2e8f0;
   --terminal-accent: #d9f2e6;
   --terminal-accent-foreground: #1f6a4c;
-  --terminal-tab-active: #eff0f2;
+  --terminal-tab-active: #dce7f5;
   --terminal-tab-active-foreground: #172033;
   --radius: 0.5rem;
   color-scheme: light;
@@ -187,6 +187,11 @@ body {
 .xterm .xterm-viewport,
 .xterm .xterm-screen {
   height: 100%;
+}
+
+.terminal-xterm-host .xterm-screen,
+.terminal-xterm-host .xterm-scrollable-element {
+  padding-left: 0.25rem;
 }
 
 button,
