@@ -1,11 +1,14 @@
 import type { Source, Task } from "@praxios/core";
 import { ExternalLink, FileText, RefreshCw } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import type {
   KeyboardEvent as ReactKeyboardEvent,
   PointerEvent as ReactPointerEvent,
   ReactNode
 } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import rehypeSanitize from "rehype-sanitize";
+import remarkGfm from "remark-gfm";
 import { Link } from "react-router-dom";
 import { AgentTerminalPanel } from "@/components/terminal/AgentTerminalPanel";
 import type { AgentTerminalPanelHandle } from "@/components/terminal/AgentTerminalPanel";
@@ -18,6 +21,7 @@ import type { TaskWorkbenchTab } from "./types";
 const defaultContextPercent = 42;
 const minContextPaneWidth = 320;
 const minAiPaneWidth = 420;
+type ContextDisplayMode = "rendered" | "raw";
 
 export function TaskWorkbenchPanel({
   onRegisterTerminal,
@@ -250,6 +254,9 @@ function ContextPane({
   task: Task | null;
   workspace: TaskWorkspaceInfo | null;
 }) {
+  const [contextDisplayMode, setContextDisplayMode] = useState<ContextDisplayMode>("rendered");
+  const context = workspace?.context ?? "";
+
   return (
     <section className="flex h-full min-h-0 flex-col border-r bg-background">
       <header className="flex min-h-16 shrink-0 items-center justify-between gap-3 border-b bg-card px-4">
@@ -281,12 +288,40 @@ function ContextPane({
           <TabsContent className="m-0 grid gap-4 p-4" value="context">
             {error && <div className="error text-sm">{error}</div>}
             <section className="grid gap-2">
-              <h2 className="text-sm font-semibold tracking-normal">context.md</h2>
-              <pre className="min-h-[60vh] whitespace-pre-wrap rounded-md border bg-card p-3 text-xs leading-5">
-                {loading && !workspace
-                  ? "Loading context..."
-                  : workspace?.context ?? "No context file"}
-              </pre>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-sm font-semibold tracking-normal">context.md</h2>
+                <div className="inline-flex rounded-md border bg-muted p-0.5">
+                  {(["rendered", "raw"] as const).map((mode) => (
+                    <Button
+                      className="h-7 rounded px-2 text-xs"
+                      key={mode}
+                      onClick={() => setContextDisplayMode(mode)}
+                      size="sm"
+                      type="button"
+                      variant={contextDisplayMode === mode ? "secondary" : "ghost"}
+                    >
+                      {mode === "rendered" ? "Rendered" : "Raw"}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              {contextDisplayMode === "raw" ? (
+                <pre className="min-h-[60vh] whitespace-pre-wrap rounded-md border bg-card p-3 text-xs leading-5">
+                  {loading && !workspace
+                    ? "Loading context..."
+                    : context || "No context file"}
+                </pre>
+              ) : (
+                <div className="min-h-[60vh] rounded-md border bg-card p-4">
+                  {loading && !workspace ? (
+                    <div className="text-sm text-muted-foreground">Loading context...</div>
+                  ) : context ? (
+                    <MarkdownDocument content={context} />
+                  ) : (
+                    <div className="text-sm text-muted-foreground">No context file</div>
+                  )}
+                </div>
+              )}
             </section>
           </TabsContent>
           <TabsContent className="m-0 p-4" value="sources">
@@ -295,6 +330,67 @@ function ContextPane({
         </ScrollArea>
       </Tabs>
     </section>
+  );
+}
+
+function MarkdownDocument({ content }: { content: string }) {
+  return (
+    <ReactMarkdown
+      components={{
+        a: ({ children, ...props }) => (
+          <a
+            {...props}
+            className="text-link underline-offset-4 hover:underline"
+            rel="noreferrer"
+            target="_blank"
+          >
+            {children}
+          </a>
+        ),
+        blockquote: ({ children }) => (
+          <blockquote className="border-l-4 border-border pl-4 text-muted-foreground">
+            {children}
+          </blockquote>
+        ),
+        code: ({ children }) => (
+          <code className="rounded bg-muted px-1 py-0.5 font-mono text-[0.92em]">
+            {children}
+          </code>
+        ),
+        h1: ({ children }) => (
+          <h1 className="mt-0 text-2xl font-semibold tracking-normal">{children}</h1>
+        ),
+        h2: ({ children }) => (
+          <h2 className="mt-6 border-b pb-2 text-lg font-semibold tracking-normal">{children}</h2>
+        ),
+        h3: ({ children }) => (
+          <h3 className="mt-5 text-base font-semibold tracking-normal">{children}</h3>
+        ),
+        li: ({ children }) => <li className="leading-6">{children}</li>,
+        ol: ({ children }) => <ol className="ml-5 list-decimal space-y-1">{children}</ol>,
+        p: ({ children }) => <p className="leading-7">{children}</p>,
+        pre: ({ children }) => (
+          <pre className="overflow-x-auto rounded-md border bg-background p-3 text-xs leading-5">
+            {children}
+          </pre>
+        ),
+        table: ({ children }) => (
+          <div className="overflow-x-auto">
+            <table className="min-w-full table-auto">{children}</table>
+          </div>
+        ),
+        td: ({ children }) => <td className="border px-2 py-1 align-top">{children}</td>,
+        th: ({ children }) => (
+          <th className="border bg-muted px-2 py-1 text-left font-semibold">{children}</th>
+        ),
+        ul: ({ children }) => <ul className="ml-5 list-disc space-y-1">{children}</ul>
+      }}
+      rehypePlugins={[rehypeSanitize]}
+      remarkPlugins={[remarkGfm]}
+      skipHtml
+    >
+      {content}
+    </ReactMarkdown>
   );
 }
 
