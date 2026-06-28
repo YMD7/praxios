@@ -15,6 +15,7 @@ import type { AgentTerminalPanelHandle } from "@/components/terminal/AgentTermin
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { api, type TaskWorkspaceInfo } from "@/api";
+import { cn } from "@/lib/utils";
 import type { TaskWorkbenchTab } from "./types";
 
 const defaultContextPercent = 42;
@@ -291,14 +292,19 @@ function ContextPane({
               <h2 className={sectionHeadingClass}>Context</h2>
               <div className="inline-flex rounded-md border bg-muted p-0.5">
                 {(["rendered", "raw"] as const).map((mode) => (
-                  <Button
-                    className="h-7 rounded px-2 text-xs"
+                <Button
+                  className={cn(
+                      "h-7 cursor-pointer rounded px-2 text-xs",
+                      contextDisplayMode === mode
+                        ? "bg-terminal-tab-active text-terminal-tab-active-foreground hover:bg-terminal-tab-active hover:text-terminal-tab-active-foreground"
+                        : "text-terminal-muted hover:bg-muted"
+                    )}
                     key={mode}
                     onClick={() => setContextDisplayMode(mode)}
                     size="sm"
                     type="button"
                     title={mode === "rendered" ? "Rendered" : "Raw"}
-                    variant={contextDisplayMode === mode ? "secondary" : "ghost"}
+                    variant="ghost"
                   >
                     {mode === "rendered" ? (
                       <Eye aria-hidden="true" className="h-3.5 w-3.5" />

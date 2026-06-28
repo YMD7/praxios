@@ -1,6 +1,6 @@
 import { Circle } from "lucide-react";
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { agentOptions, type AgentId } from "./types";
 import { WtermTerminal } from "./WtermTerminal";
@@ -61,29 +61,25 @@ export const AgentTerminalPanel = forwardRef<AgentTerminalPanelHandle, AgentTerm
         </header>
 
         <div className="flex shrink-0 items-center border-b border-terminal-border px-4 py-2">
-          <Tabs
-            className="w-auto"
-            defaultValue={agent}
-            onValueChange={(value) => setAgent(value as AgentId)}
-            value={agent}
-          >
-            <TabsList className="h-auto rounded-sm border border-terminal-border bg-terminal-background p-0">
-              {agentOptions.map((option) => (
-                <TabsTrigger
-                  className={cn(
-                    "h-8 px-3 py-0 text-xs font-medium text-terminal-muted",
-                    "border-r border-terminal-border rounded-none last:border-r-0",
-                    "data-[state=active]:bg-terminal-tab-active data-[state=active]:text-terminal-tab-active-foreground",
-                    "data-[state=active]:font-semibold"
-                  )}
-                  key={option.id}
-                  value={option.id}
-                >
-                  {option.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+          <div className="inline-flex rounded-md border bg-muted p-0.5">
+            {agentOptions.map((option) => (
+              <Button
+                className={cn(
+                  "h-7 cursor-pointer rounded px-2 text-xs",
+                  agent === option.id
+                    ? "bg-terminal-tab-active text-terminal-tab-active-foreground hover:bg-terminal-tab-active hover:text-terminal-tab-active-foreground"
+                    : "text-terminal-muted hover:bg-muted"
+                )}
+                key={option.id}
+                onClick={() => setAgent(option.id)}
+                size="sm"
+                type="button"
+                variant="ghost"
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
         </div>
 
         <div className="min-h-0 flex-1">
