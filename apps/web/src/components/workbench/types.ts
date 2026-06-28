@@ -5,7 +5,7 @@ export const HOME_TAB_ID = "home";
 export type HomeWorkbenchTab = {
   id: typeof HOME_TAB_ID;
   kind: "home";
-  title: "Home";
+  title: "Tasks";
   closable: false;
 };
 
@@ -22,7 +22,7 @@ export type WorkbenchTab = HomeWorkbenchTab | TaskWorkbenchTab;
 export const homeTab: HomeWorkbenchTab = {
   id: HOME_TAB_ID,
   kind: "home",
-  title: "Home",
+  title: "Tasks",
   closable: false
 };
 

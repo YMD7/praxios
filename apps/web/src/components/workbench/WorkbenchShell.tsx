@@ -105,7 +105,7 @@ export function WorkbenchShell() {
 
   function activateTab(tab: WorkbenchTab) {
     setActiveTabId(tab.id);
-    navigate(tab.kind === "home" ? "/" : `/tasks/${tab.taskId}`);
+    navigate(tab.kind === "home" ? "/tasks" : `/tasks/${tab.taskId}`);
   }
 
   function closeWorkbenchTab(tab: TaskWorkbenchTab) {
@@ -114,7 +114,7 @@ export function WorkbenchShell() {
     closeTab(tab.id, nextTab.id);
     terminalRefs.current.get(tab.id)?.closeSession();
     terminalRefs.current.delete(tab.id);
-    navigate(nextTab.kind === "home" ? "/" : `/tasks/${nextTab.taskId}`);
+    navigate(nextTab.kind === "home" ? "/tasks" : `/tasks/${nextTab.taskId}`);
   }
 
   function handleTaskDeleted(taskId: string) {
@@ -130,7 +130,7 @@ export function WorkbenchShell() {
     terminalRefs.current.delete(tab.id);
 
     if (shouldNavigate) {
-      navigate(nextTab.kind === "home" ? "/" : `/tasks/${nextTab.taskId}`);
+      navigate(nextTab.kind === "home" ? "/tasks" : `/tasks/${nextTab.taskId}`);
     }
   }
 
