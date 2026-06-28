@@ -2,6 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { knowledgeLinks } from "../src/db/schema.js";
 import { PraxiosCore } from "../src/services/praxios-core.js";
 
 let tempDir: string;
@@ -296,5 +297,70 @@ describe("PraxiosCore", () => {
 
     expect(proposal?.status).toBe("applied");
     expect(core.listTasks()).toHaveLength(1);
+  });
+
+  it("deletes a task with task-owned records and workspace while preserving sources", () => {
+    const task = core.createTask({
+      title: "Delete target",
+      description: "Task that should be removed.",
+      status: "New",
+      priority: "Normal",
+      completionCriteria: "Task no longer exists."
+    });
+    const workspace = core.getTaskWorkspace(task.id);
+    const processedSource = core.ingestSource({
+      sourceType: "manual_note",
+      sourceTitle: "Processed task source",
+      content: "Approved context for the task.",
+      metadata: {},
+      taskId: task.id,
+      processNow: true
+    });
+    const contextProposal = processedSource.proposals.find(
+      (proposal) => proposal.proposalType === "task_context"
+    );
+    const pendingSource = core.ingestSource({
+      sourceType: "manual_note",
+      sourceTitle: "Pending task source",
+      content: "This source should remain but not block processing later.",
+      metadata: {},
+      taskId: task.id,
+      processNow: false
+    });
+
+    expect(contextProposal).toBeDefined();
+    core.applyProposal(contextProposal!.id);
+    core.db
+      .insert(knowledgeLinks)
+      .values({
+        id: "knowledge-link-1",
+        taskId: task.id,
+        wikiPageId: "wiki-page-1",
+        relationType: "related",
+        evidence: "{}"
+      })
+      .run();
+
+    core.deleteTask(task.id);
+
+    expect(core.getTask(task.id)).toBeNull();
+    expect(core.listContextItems(task.id)).toHaveLength(0);
+    expect(core.listProposals({ taskId: task.id })).toHaveLength(0);
+    expect(
+      core.db.select().from(knowledgeLinks).all().filter((link) => link.taskId === task.id)
+    ).toHaveLength(0);
+    expect(fs.existsSync(workspace.path)).toBe(false);
+    expect(core.getSource(processedSource.source.id)).not.toBeNull();
+    expect(core.getSource(pendingSource.source.id)?.processedAt).not.toBeNull();
+    expect(core.processPendingSources().processedSourceCount).toBe(0);
+    expect(
+      core.listAuditEvents().some(
+        (event) => event.eventType === "task.deleted" && event.subjectId === task.id
+      )
+    ).toBe(true);
+  });
+
+  it("rejects deleting a missing task", () => {
+    expect(() => core.deleteTask("missing-task")).toThrow("Task not found");
   });
 });

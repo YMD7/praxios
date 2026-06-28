@@ -1,5 +1,5 @@
 import type { TaskPriority } from "@praxios/core";
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus, RefreshCw, Trash2 } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api.js";
@@ -15,6 +15,7 @@ export function TaskList() {
   const [priority, setPriority] = useState<TaskPriority>("Normal");
   const [dueDate, setDueDate] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
 
   async function loadTasks() {
     const result = await api.listTasks();
@@ -42,6 +43,23 @@ export function TaskList() {
       navigate(`/tasks/${result.task.id}`);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Failed to create task");
+    }
+  }
+
+  async function onDeleteTask(task: Task) {
+    const confirmed = window.confirm(`Delete task "${task.title}"?`);
+    if (!confirmed) return;
+
+    setError(null);
+    setDeletingTaskId(task.id);
+
+    try {
+      await api.deleteTask(task.id);
+      setTasks((current) => current.filter((item) => item.id !== task.id));
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete task");
+    } finally {
+      setDeletingTaskId(null);
     }
   }
 
@@ -112,6 +130,7 @@ export function TaskList() {
                 <th>Priority</th>
                 <th>Due</th>
                 <th>Updated</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -124,11 +143,23 @@ export function TaskList() {
                   <td>{task.priority}</td>
                   <td>{task.dueDate ?? "-"}</td>
                   <td>{new Date(task.updatedAt).toLocaleString()}</td>
+                  <td>
+                    <button
+                      aria-label={`Delete ${task.title}`}
+                      className="iconButton danger"
+                      disabled={deletingTaskId === task.id}
+                      onClick={() => void onDeleteTask(task)}
+                      title="Delete task"
+                      type="button"
+                    >
+                      <Trash2 aria-hidden="true" size={18} />
+                    </button>
+                  </td>
                 </tr>
               ))}
               {tasks.length === 0 && (
                 <tr>
-                  <td colSpan={5}>No tasks</td>
+                  <td colSpan={6}>No tasks</td>
                 </tr>
               )}
             </tbody>

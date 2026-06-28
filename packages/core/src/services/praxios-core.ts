@@ -221,6 +221,38 @@ export class PraxiosCore {
     return task;
   }
 
+  deleteTask(id: string): void {
+    const task = this.repo.getTask(id);
+    if (!task) {
+      throw new NotFoundError(`Task not found: ${id}`);
+    }
+
+    const workspacePath = this.getTaskWorkspacePath(id);
+
+    this.runInTransaction(() => {
+      for (const source of this.repo.listSources()) {
+        if (getMetadataString(source.metadata, "taskId") === id && !source.processedAt) {
+          this.repo.markSourceProcessed(source.id);
+        }
+      }
+
+      this.repo.deleteContextItemsForTask(id);
+      this.repo.deleteProposalsForTask(id);
+      this.repo.deleteKnowledgeLinksForTask(id);
+      this.repo.deleteTask(id);
+
+      this.repo.createAuditEvent({
+        actor: "local-user",
+        eventType: "task.deleted",
+        subjectType: "task",
+        subjectId: id,
+        payload: { title: task.title }
+      });
+    });
+
+    fs.rmSync(workspacePath, { recursive: true, force: true });
+  }
+
   listContextItems(taskId: string) {
     return this.repo.listContextItems(taskId);
   }
@@ -537,7 +569,7 @@ export class PraxiosCore {
       throw new NotFoundError(`Task not found: ${taskId}`);
     }
 
-    const workspacePath = path.join(this.config.workspaceRoot, ".praxios", "tasks", taskId);
+    const workspacePath = this.getTaskWorkspacePath(taskId);
     const sourcesPath = path.join(workspacePath, "sources");
     const contextPath = path.join(workspacePath, "context.md");
     const agentsPath = path.join(workspacePath, "AGENTS.md");
@@ -576,6 +608,10 @@ export class PraxiosCore {
     const current = fs.readFileSync(workspace.contextPath, "utf8");
     const next = applyContextUpdate(current, update);
     fs.writeFileSync(workspace.contextPath, next, "utf8");
+  }
+
+  private getTaskWorkspacePath(taskId: string): string {
+    return path.join(this.config.workspaceRoot, ".praxios", "tasks", taskId);
   }
 
   private syncWikiLinks(pageId: string, body: string, sourceId: string | null): void {

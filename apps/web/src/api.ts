@@ -53,6 +53,15 @@ export const api = {
   async getTask(taskId: string) {
     return request<{ task: Task }>(`/tasks/${taskId}`);
   },
+  async deleteTask(taskId: string) {
+    const response = await fetch(`${apiBase}/tasks/${taskId}`, {
+      method: "DELETE"
+    });
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(body || `Task delete request failed: ${response.status}`);
+    }
+  },
   async listTaskContext(taskId: string) {
     return request<{ contextItems: ContextItem[] }>(`/tasks/${taskId}/context`);
   },

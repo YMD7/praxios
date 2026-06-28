@@ -151,6 +151,35 @@ describe("Praxios API validation", () => {
     );
   });
 
+  it("deletes task records through the API", async () => {
+    const task = core.createTask({
+      title: "Delete via API",
+      description: "Remove this task.",
+      status: "New",
+      priority: "Normal",
+      completionCriteria: "Task is gone."
+    });
+    const workspace = core.getTaskWorkspace(task.id);
+
+    const deleteResponse = await app.request(`/tasks/${task.id}`, {
+      method: "DELETE"
+    });
+    const getResponse = await app.request(`/tasks/${task.id}`);
+
+    expect(deleteResponse.status).toBe(204);
+    expect(getResponse.status).toBe(404);
+    expect(fs.existsSync(workspace.path)).toBe(false);
+  });
+
+  it("returns 404 when deleting a missing task", async () => {
+    const response = await app.request("/tasks/missing-task", {
+      method: "DELETE"
+    });
+
+    expect(response.status).toBe(404);
+    expect(await response.json()).toMatchObject({ error: "not_found" });
+  });
+
   it("lists sources attached to a task", async () => {
     const task = core.createTask({
       title: "Contract task",

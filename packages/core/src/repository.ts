@@ -4,6 +4,7 @@ import type { PraxiosDatabase } from "./db/client.js";
 import {
   auditEvents,
   contextItems,
+  knowledgeLinks,
   proposals,
   sources,
   tasks,
@@ -236,6 +237,22 @@ export class PraxiosRepository {
 
     this.db.update(tasks).set(changes).where(eq(tasks.id, id)).run();
     return this.getRequiredTask(id);
+  }
+
+  deleteTask(id: string): void {
+    this.db.delete(tasks).where(eq(tasks.id, id)).run();
+  }
+
+  deleteContextItemsForTask(taskId: string): void {
+    this.db.delete(contextItems).where(eq(contextItems.taskId, taskId)).run();
+  }
+
+  deleteProposalsForTask(taskId: string): void {
+    this.db.delete(proposals).where(eq(proposals.taskId, taskId)).run();
+  }
+
+  deleteKnowledgeLinksForTask(taskId: string): void {
+    this.db.delete(knowledgeLinks).where(eq(knowledgeLinks.taskId, taskId)).run();
   }
 
   listSources(): Source[] {

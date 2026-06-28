@@ -108,6 +108,11 @@ export function createApp(core = new PraxiosCore()) {
     return c.json({ task });
   });
 
+  app.delete("/tasks/:taskId", (c) => {
+    core.deleteTask(c.req.param("taskId"));
+    return c.body(null, 204);
+  });
+
   app.get("/tasks/:taskId/context", (c) => {
     return c.json({ contextItems: core.listContextItems(c.req.param("taskId")) });
   });
