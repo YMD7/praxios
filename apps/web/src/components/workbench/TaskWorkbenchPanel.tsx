@@ -341,62 +341,66 @@ function TaskStatusBadge({ status }: { status: Task["status"] | undefined }) {
 
 function MarkdownDocument({ content }: { content: string }) {
   return (
-    <ReactMarkdown
-      components={{
-        a: ({ children, ...props }) => (
-          <a
-            {...props}
-            className="text-link underline-offset-4 hover:underline"
-            rel="noreferrer"
-            target="_blank"
-          >
-            {children}
-          </a>
-        ),
-        blockquote: ({ children }) => (
-          <blockquote className="border-l-4 border-border pl-4 text-muted-foreground">
-            {children}
-          </blockquote>
-        ),
-        code: ({ children }) => (
-          <code className="rounded bg-muted px-1 py-0.5 font-mono text-[0.92em]">
-            {children}
-          </code>
-        ),
-        h1: ({ children }) => (
-          <h1 className="mt-0 text-2xl font-semibold tracking-normal">{children}</h1>
-        ),
-        h2: ({ children }) => (
-          <h2 className="mt-6 border-b pb-2 text-lg font-semibold tracking-normal">{children}</h2>
-        ),
-        h3: ({ children }) => (
-          <h3 className="mt-5 text-base font-semibold tracking-normal">{children}</h3>
-        ),
-        li: ({ children }) => <li className="leading-6">{children}</li>,
-        ol: ({ children }) => <ol className="ml-5 list-decimal space-y-1">{children}</ol>,
-        p: ({ children }) => <p className="leading-7">{children}</p>,
-        pre: ({ children }) => (
-          <pre className="overflow-x-auto rounded-md border bg-background p-3 text-xs leading-5">
-            {children}
-          </pre>
-        ),
-        table: ({ children }) => (
-          <div className="overflow-x-auto">
-            <table className="min-w-full table-auto">{children}</table>
-          </div>
-        ),
-        td: ({ children }) => <td className="border px-2 py-1 align-top">{children}</td>,
-        th: ({ children }) => (
-          <th className="border bg-muted px-2 py-1 text-left font-semibold">{children}</th>
-        ),
-        ul: ({ children }) => <ul className="ml-5 list-disc space-y-1">{children}</ul>
-      }}
-      rehypePlugins={[rehypeSanitize]}
-      remarkPlugins={[remarkGfm]}
-      skipHtml
-    >
-      {content}
-    </ReactMarkdown>
+    <div className="text-sm leading-relaxed">
+      <ReactMarkdown
+        components={{
+          a: ({ children, ...props }) => (
+            <a
+              {...props}
+              className="text-link underline-offset-4 hover:underline"
+              rel="noreferrer"
+              target="_blank"
+            >
+              {children}
+            </a>
+          ),
+          blockquote: ({ children }) => (
+            <blockquote className="my-4 border-l-4 border-border pl-4 text-muted-foreground">
+              {children}
+            </blockquote>
+          ),
+          code: ({ children }) => (
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-[0.92em]">
+              {children}
+            </code>
+          ),
+          h1: ({ children }) => (
+            <h1 className="mb-4 text-2xl font-semibold tracking-normal">{children}</h1>
+          ),
+          h2: ({ children }) => (
+            <h2 className="mt-6 mb-3 border-b pb-2 text-lg font-semibold tracking-normal">
+              {children}
+            </h2>
+          ),
+          h3: ({ children }) => (
+            <h3 className="mt-5 mb-2 text-base font-semibold tracking-normal">{children}</h3>
+          ),
+          li: ({ children }) => <li className="mb-1 leading-6">{children}</li>,
+          ol: ({ children }) => <ol className="mb-4 ml-5 list-decimal space-y-1">{children}</ol>,
+          p: ({ children }) => <p className="mb-4 leading-7">{children}</p>,
+          pre: ({ children }) => (
+            <pre className="mb-4 overflow-x-auto rounded-md border bg-background p-3 text-xs leading-5">
+              {children}
+            </pre>
+          ),
+          table: ({ children }) => (
+            <div className="overflow-x-auto">
+              <table className="my-4 min-w-full table-auto">{children}</table>
+            </div>
+          ),
+          td: ({ children }) => <td className="border px-2 py-1 align-top">{children}</td>,
+          th: ({ children }) => (
+            <th className="border bg-muted px-2 py-1 text-left font-semibold">{children}</th>
+          ),
+          ul: ({ children }) => <ul className="mb-4 ml-5 list-disc space-y-1">{children}</ul>
+        }}
+        rehypePlugins={[rehypeSanitize]}
+        remarkPlugins={[remarkGfm]}
+        skipHtml
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
   );
 }
 
