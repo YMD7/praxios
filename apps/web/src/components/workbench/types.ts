@@ -5,7 +5,7 @@ export const HOME_TAB_ID = "home";
 export type HomeWorkbenchTab = {
   id: typeof HOME_TAB_ID;
   kind: "home";
-  title: "Home";
+  title: string;
   closable: false;
 };
 
@@ -25,6 +25,10 @@ export const homeTab: HomeWorkbenchTab = {
   title: "Home",
   closable: false
 };
+
+export function isFixedWorkbenchTab(tab: WorkbenchTab): tab is HomeWorkbenchTab {
+  return tab.closable === false;
+}
 
 export function getTaskTabId(taskId: string) {
   return `task:${taskId}`;

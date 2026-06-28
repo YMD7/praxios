@@ -22,7 +22,13 @@ import { Home } from "@/views/Home";
 import { SourceList } from "@/views/SourceList";
 import { SourceViewer } from "@/views/SourceViewer";
 import { TaskList } from "@/views/TaskList";
-import { HOME_TAB_ID, getTaskTabId, type TaskWorkbenchTab, type WorkbenchTab } from "./types";
+import {
+  HOME_TAB_ID,
+  getTaskTabId,
+  isFixedWorkbenchTab,
+  type TaskWorkbenchTab,
+  type WorkbenchTab
+} from "./types";
 import { useWorkbenchTabs } from "./use-workbench-tabs";
 import { TaskWorkbenchPanel } from "./TaskWorkbenchPanel";
 
@@ -104,8 +110,13 @@ export function WorkbenchShell() {
   ]);
 
   function activateTab(tab: WorkbenchTab) {
+    if (isFixedWorkbenchTab(tab)) {
+      navigate("/");
+      return;
+    }
+
     setActiveTabId(tab.id);
-    navigate(tab.kind === "home" ? "/" : `/tasks/${tab.taskId}`);
+    navigate(`/tasks/${tab.taskId}`);
   }
 
   function closeWorkbenchTab(tab: TaskWorkbenchTab) {
@@ -114,7 +125,11 @@ export function WorkbenchShell() {
     closeTab(tab.id, nextTab.id);
     terminalRefs.current.get(tab.id)?.closeSession();
     terminalRefs.current.delete(tab.id);
-    navigate(nextTab.kind === "home" ? "/" : `/tasks/${nextTab.taskId}`);
+    if (isFixedWorkbenchTab(nextTab)) {
+      navigate("/");
+    } else {
+      navigate(`/tasks/${nextTab.taskId}`);
+    }
   }
 
   function handleTaskDeleted(taskId: string) {
@@ -130,7 +145,11 @@ export function WorkbenchShell() {
     terminalRefs.current.delete(tab.id);
 
     if (shouldNavigate) {
-      navigate(nextTab.kind === "home" ? "/" : `/tasks/${nextTab.taskId}`);
+      if (isFixedWorkbenchTab(nextTab)) {
+        navigate("/");
+      } else {
+        navigate(`/tasks/${nextTab.taskId}`);
+      }
     }
   }
 
@@ -218,49 +237,52 @@ function TabStrip({
 }) {
   return (
     <div className="flex h-11 shrink-0 items-end border-b bg-card px-2">
-      {tabs.map((tab, index) => (
-        <div
-          className={cn(
-            "flex h-9 max-w-[240px] items-center gap-1 border border-b-0 px-2",
-            index === 0 && "mr-1",
-            activeTabId === tab.id
-              ? cn(
-                  "rounded-t-lg",
-                  tab.kind === "home"
-                    ? "border-border bg-primary/15 text-primary shadow-sm ring-1 ring-primary/20"
-                    : "border-border bg-background text-foreground"
-                )
-              : cn(
-                  "text-muted-foreground hover:bg-muted/80",
-                  tab.kind === "home"
-                    ? "border-border bg-primary/10 text-primary"
-                    : "border-muted-foreground/30 bg-muted/60"
-                )
-          )}
-          key={tab.id}
-        >
-          <button
-            className="min-w-0 flex-1 truncate px-1 text-left text-sm font-medium"
-            onClick={() => onActivate(tab)}
-            type="button"
+      {tabs.map((tab, index) => {
+        const fixed = isFixedWorkbenchTab(tab);
+        return (
+          <div
+            className={cn(
+              "flex h-9 max-w-[240px] items-center gap-1 border border-b-0 px-2",
+              index === 0 && "mr-1",
+              activeTabId === tab.id
+                ? cn(
+                    "rounded-t-lg",
+                    fixed
+                      ? "border-border bg-primary/15 text-primary shadow-sm ring-1 ring-primary/20"
+                      : "border-border bg-background text-foreground"
+                  )
+                : cn(
+                    "text-muted-foreground hover:bg-muted/80",
+                    fixed
+                      ? "border-border bg-primary/10 text-primary"
+                      : "border-muted-foreground/30 bg-muted/60"
+                  )
+            )}
+            key={tab.id}
           >
-            {tab.title}
-          </button>
-          {tab.kind === "task" && (
-            <Button
-              aria-label={`Close ${tab.title}`}
-              className="h-6 w-6 shrink-0 rounded-md p-0"
-              onClick={() => onClose(tab)}
-              size="icon"
-              title="Close tab"
+            <button
+              className="min-w-0 flex-1 truncate px-1 text-left text-sm font-medium"
+              onClick={() => onActivate(tab)}
               type="button"
-              variant="ghost"
             >
-              <X aria-hidden="true" className="h-3.5 w-3.5" />
-            </Button>
-          )}
-        </div>
-      ))}
+              {tab.title}
+            </button>
+            {!fixed && (
+              <Button
+                aria-label={`Close ${tab.title}`}
+                className="h-6 w-6 shrink-0 rounded-md p-0"
+                onClick={() => onClose(tab)}
+                size="icon"
+                title="Close tab"
+                type="button"
+                variant="ghost"
+              >
+                <X aria-hidden="true" className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
