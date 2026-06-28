@@ -1,5 +1,5 @@
 import type { Source, Task } from "@praxios/core";
-import { ExternalLink, FileText, RefreshCw } from "lucide-react";
+import { CodeXml, Eye, ExternalLink, FileText, RefreshCw } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import type {
   KeyboardEvent as ReactKeyboardEvent,
@@ -14,8 +14,8 @@ import { AgentTerminalPanel } from "@/components/terminal/AgentTerminalPanel";
 import type { AgentTerminalPanelHandle } from "@/components/terminal/AgentTerminalPanel";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api, type TaskWorkspaceInfo } from "@/api";
+import { cn } from "@/lib/utils";
 import type { TaskWorkbenchTab } from "./types";
 
 const defaultContextPercent = 42;
@@ -263,19 +263,19 @@ function ContextPane({
 }) {
   const [contextDisplayMode, setContextDisplayMode] = useState<ContextDisplayMode>("rendered");
   const context = workspace?.context ?? "";
+  const sectionHeadingClass = "text-sm font-semibold tracking-normal";
 
   return (
     <section className="flex h-full min-h-0 flex-col border-r bg-background">
-      <header className="flex min-h-16 shrink-0 items-center justify-between gap-3 border-b bg-card px-4">
-        <div className="min-w-0">
+      <header className="flex shrink-0 items-start justify-between gap-3 border-b bg-card px-4 py-4">
+        <div className="min-w-0 space-y-1.5">
+          <h2 className={sectionHeadingClass}>Task</h2>
           <div className="flex items-center gap-2">
             <h1 className="truncate text-base font-semibold tracking-normal">
               {task?.title ?? "Loading task..."}
             </h1>
           </div>
-          <p className="truncate text-xs text-muted-foreground">
-            {workspace?.path ?? "Preparing workspace"}
-          </p>
+          <TaskStatusBadge status={task?.status} />
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Button onClick={onRefresh} size="icon" title="Refresh context" type="button" variant="ghost">
@@ -284,120 +284,136 @@ function ContextPane({
         </div>
       </header>
 
-      <Tabs className="flex min-h-0 flex-1 flex-col" defaultValue="context">
-        <div className="shrink-0 border-b bg-card px-4 py-2">
-          <TabsList>
-            <TabsTrigger value="context">Context</TabsTrigger>
-            <TabsTrigger value="sources">Sources</TabsTrigger>
-          </TabsList>
-        </div>
-        <ScrollArea className="min-h-0 flex-1">
-          <TabsContent className="m-0 grid gap-4 p-4" value="context">
-            {error && <div className="error text-sm">{error}</div>}
-            <section className="grid gap-2">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-sm font-semibold tracking-normal">context.md</h2>
-                <div className="inline-flex rounded-md border bg-muted p-0.5">
-                  {(["rendered", "raw"] as const).map((mode) => (
-                    <Button
-                      className="h-7 rounded px-2 text-xs"
-                      key={mode}
-                      onClick={() => setContextDisplayMode(mode)}
-                      size="sm"
-                      type="button"
-                      variant={contextDisplayMode === mode ? "secondary" : "ghost"}
-                    >
-                      {mode === "rendered" ? "Rendered" : "Raw"}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-              {contextDisplayMode === "raw" ? (
-                <pre className="min-h-[60vh] whitespace-pre-wrap rounded-md border bg-card p-3 text-xs leading-5">
-                  {loading && !workspace
-                    ? "Loading context..."
-                    : context || "No context file"}
-                </pre>
-              ) : (
-                <div className="min-h-[60vh] rounded-md border bg-card p-4">
-                  {loading && !workspace ? (
-                    <div className="text-sm text-muted-foreground">Loading context...</div>
-                  ) : context ? (
-                    <MarkdownDocument content={context} />
-                  ) : (
-                    <div className="text-sm text-muted-foreground">No context file</div>
-                  )}
-                </div>
-              )}
-            </section>
-          </TabsContent>
-          <TabsContent className="m-0 p-4" value="sources">
+      <ScrollArea className="min-h-0 flex-1">
+        <div className="grid gap-5 p-5">
+          {error && <div className="error text-sm">{error}</div>}
+          <section className="grid gap-2">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className={sectionHeadingClass}>Sources</h2>
+              <span className="text-xs text-muted-foreground">{sources.length}</span>
+            </div>
             <TaskSourceList loading={loading} sources={sources} />
-          </TabsContent>
-        </ScrollArea>
-      </Tabs>
+          </section>
+          <section className="grid gap-2">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className={sectionHeadingClass}>Context</h2>
+              <div className="inline-flex rounded-md border bg-muted p-0.5">
+                {(["rendered", "raw"] as const).map((mode) => (
+                <Button
+                  className={cn(
+                      "h-7 cursor-pointer rounded px-2 text-xs",
+                      contextDisplayMode === mode
+                        ? "bg-terminal-tab-active text-terminal-tab-active-foreground hover:bg-terminal-tab-active hover:text-terminal-tab-active-foreground"
+                        : "text-terminal-muted hover:bg-muted"
+                    )}
+                    key={mode}
+                    onClick={() => setContextDisplayMode(mode)}
+                    size="sm"
+                    type="button"
+                    title={mode === "rendered" ? "Rendered" : "Raw"}
+                    variant="ghost"
+                  >
+                    {mode === "rendered" ? (
+                      <Eye aria-hidden="true" className="h-3.5 w-3.5" />
+                    ) : (
+                      <CodeXml aria-hidden="true" className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            {contextDisplayMode === "raw" ? (
+              <pre className="min-h-[60vh] whitespace-pre-wrap rounded-md border bg-card p-3 text-xs leading-5">
+                {loading && !workspace ? "Loading context..." : context || "No context file"}
+              </pre>
+            ) : (
+              <div className="min-h-[60vh] rounded-md border bg-card p-4">
+                {loading && !workspace ? (
+                  <div className="text-sm text-muted-foreground">Loading context...</div>
+                ) : context ? (
+                  <MarkdownDocument content={context} />
+                ) : (
+                  <div className="text-sm text-muted-foreground">No context file</div>
+                )}
+              </div>
+            )}
+          </section>
+        </div>
+      </ScrollArea>
     </section>
+  );
+}
+
+function TaskStatusBadge({ status }: { status: Task["status"] | undefined }) {
+  return (
+    <span className="mt-1 inline-flex h-5 w-fit items-center rounded border bg-muted px-2 text-[11px] font-medium uppercase leading-none text-muted-foreground">
+      {status ?? "loading"}
+    </span>
   );
 }
 
 function MarkdownDocument({ content }: { content: string }) {
   return (
-    <ReactMarkdown
-      components={{
-        a: ({ children, ...props }) => (
-          <a
-            {...props}
-            className="text-link underline-offset-4 hover:underline"
-            rel="noreferrer"
-            target="_blank"
-          >
-            {children}
-          </a>
-        ),
-        blockquote: ({ children }) => (
-          <blockquote className="border-l-4 border-border pl-4 text-muted-foreground">
-            {children}
-          </blockquote>
-        ),
-        code: ({ children }) => (
-          <code className="rounded bg-muted px-1 py-0.5 font-mono text-[0.92em]">
-            {children}
-          </code>
-        ),
-        h1: ({ children }) => (
-          <h1 className="mt-0 text-2xl font-semibold tracking-normal">{children}</h1>
-        ),
-        h2: ({ children }) => (
-          <h2 className="mt-6 border-b pb-2 text-lg font-semibold tracking-normal">{children}</h2>
-        ),
-        h3: ({ children }) => (
-          <h3 className="mt-5 text-base font-semibold tracking-normal">{children}</h3>
-        ),
-        li: ({ children }) => <li className="leading-6">{children}</li>,
-        ol: ({ children }) => <ol className="ml-5 list-decimal space-y-1">{children}</ol>,
-        p: ({ children }) => <p className="leading-7">{children}</p>,
-        pre: ({ children }) => (
-          <pre className="overflow-x-auto rounded-md border bg-background p-3 text-xs leading-5">
-            {children}
-          </pre>
-        ),
-        table: ({ children }) => (
-          <div className="overflow-x-auto">
-            <table className="min-w-full table-auto">{children}</table>
-          </div>
-        ),
-        td: ({ children }) => <td className="border px-2 py-1 align-top">{children}</td>,
-        th: ({ children }) => (
-          <th className="border bg-muted px-2 py-1 text-left font-semibold">{children}</th>
-        ),
-        ul: ({ children }) => <ul className="ml-5 list-disc space-y-1">{children}</ul>
-      }}
-      rehypePlugins={[rehypeSanitize]}
-      remarkPlugins={[remarkGfm]}
-      skipHtml
-    >
-      {content}
-    </ReactMarkdown>
+    <div className="text-sm leading-relaxed">
+      <ReactMarkdown
+        components={{
+          a: ({ children, ...props }) => (
+            <a
+              {...props}
+              className="text-link underline-offset-4 hover:underline"
+              rel="noreferrer"
+              target="_blank"
+            >
+              {children}
+            </a>
+          ),
+          blockquote: ({ children }) => (
+            <blockquote className="my-4 border-l-4 border-border pl-4 text-muted-foreground">
+              {children}
+            </blockquote>
+          ),
+          code: ({ children }) => (
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-[0.92em]">
+              {children}
+            </code>
+          ),
+          h1: ({ children }) => (
+            <h1 className="mb-4 text-2xl font-semibold tracking-normal">{children}</h1>
+          ),
+          h2: ({ children }) => (
+            <h2 className="mt-6 mb-3 border-b pb-2 text-lg font-semibold tracking-normal">
+              {children}
+            </h2>
+          ),
+          h3: ({ children }) => (
+            <h3 className="mt-5 mb-2 text-base font-semibold tracking-normal">{children}</h3>
+          ),
+          li: ({ children }) => <li className="mb-1 leading-6">{children}</li>,
+          ol: ({ children }) => <ol className="mb-4 ml-5 list-decimal space-y-1">{children}</ol>,
+          p: ({ children }) => <p className="mb-4 leading-7">{children}</p>,
+          pre: ({ children }) => (
+            <pre className="mb-4 overflow-x-auto rounded-md border bg-background p-3 text-xs leading-5">
+              {children}
+            </pre>
+          ),
+          table: ({ children }) => (
+            <div className="overflow-x-auto">
+              <table className="my-4 min-w-full table-auto">{children}</table>
+            </div>
+          ),
+          td: ({ children }) => <td className="border px-2 py-1 align-top">{children}</td>,
+          th: ({ children }) => (
+            <th className="border bg-muted px-2 py-1 text-left font-semibold">{children}</th>
+          ),
+          ul: ({ children }) => <ul className="mb-4 ml-5 list-disc space-y-1">{children}</ul>
+        }}
+        rehypePlugins={[rehypeSanitize]}
+        remarkPlugins={[remarkGfm]}
+        skipHtml
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
   );
 }
 

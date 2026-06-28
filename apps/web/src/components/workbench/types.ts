@@ -26,6 +26,10 @@ export const homeTab: HomeWorkbenchTab = {
   closable: false
 };
 
+export function isFixedWorkbenchTab(tab: WorkbenchTab): tab is HomeWorkbenchTab {
+  return tab.closable === false;
+}
+
 export function getTaskTabId(taskId: string) {
   return `task:${taskId}`;
 }

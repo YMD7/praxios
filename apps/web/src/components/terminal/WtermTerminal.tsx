@@ -280,6 +280,11 @@ export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>
 
     useEffect(() => closeSocket, [closeSocket]);
 
-    return <div className="h-full min-h-0 w-full bg-terminal-background" ref={containerRef} />;
+    return (
+      <div
+        className="h-full min-h-0 w-full bg-terminal-background terminal-xterm-host"
+        ref={containerRef}
+      />
+    );
   }
 );
