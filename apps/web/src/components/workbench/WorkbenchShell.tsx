@@ -192,11 +192,14 @@ function GlobalMenu({ onNavigateHome }: { onNavigateHome: () => void }) {
     <aside className="flex w-[76px] shrink-0 flex-col items-center border-r bg-sidebar py-3 text-sidebar-foreground">
       <Link
         aria-label="Praxios Home"
-        className="mb-4 flex h-10 w-10 items-center justify-center rounded-md bg-primary/15 text-primary hover:bg-primary/25"
+        className="mb-4 flex h-10 w-10 items-center justify-center rounded-md bg-primary/15 text-sidebar-foreground hover:bg-primary/25"
         onClick={onNavigateHome}
         to="/"
       >
-        <SearchCheck aria-hidden="true" className="h-5 w-5" />
+        <SearchCheck
+          aria-hidden="true"
+          className="h-5 w-5 !text-sidebar-foreground"
+        />
       </Link>
       <nav className="grid gap-2">
         {navigation.map((item) => {
@@ -206,7 +209,7 @@ function GlobalMenu({ onNavigateHome }: { onNavigateHome: () => void }) {
               aria-label={item.label}
               className={({ isActive }) =>
                 cn(
-                  "flex h-11 w-11 items-center justify-center rounded-md text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                  "flex h-11 w-11 items-center justify-center rounded-md text-sidebar-foreground hover:bg-sidebar-accent",
                   isActive && "bg-sidebar-active text-sidebar-foreground"
                 )
               }
@@ -215,7 +218,10 @@ function GlobalMenu({ onNavigateHome }: { onNavigateHome: () => void }) {
               title={item.label}
               to={item.to}
             >
-              <Icon aria-hidden="true" className="h-5 w-5" />
+              <Icon
+                aria-hidden="true"
+                className="h-5 w-5 !text-sidebar-foreground"
+              />
             </NavLink>
           );
         })}
