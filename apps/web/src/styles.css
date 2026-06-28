@@ -189,6 +189,11 @@ body {
   height: 100%;
 }
 
+.terminal-xterm-host .xterm-screen,
+.terminal-xterm-host .xterm-scrollable-element {
+  padding-left: 0.25rem;
+}
+
 button,
 input,
 select,
