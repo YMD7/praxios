@@ -85,7 +85,7 @@ export function TaskWorkbenchPanel({
           </div>
         ),
         ai: (
-          <div className="h-full min-h-0 min-w-0 overflow-hidden pl-1">
+          <div className="h-full min-h-0 min-w-0 overflow-hidden pl-2">
             <AgentTerminalPanel ref={terminalRef} tabId={tab.id} taskId={tab.taskId} />
           </div>
         )
