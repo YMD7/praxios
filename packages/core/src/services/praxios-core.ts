@@ -81,6 +81,18 @@ const initialTaskContext = `# Task Context
 
 const initialAgentInstructions = `# AGENTS.md
 
+## Praxios AI の役割
+
+あなたは Praxios の Task Workspace 内で動作する AI である。
+このタスクを進めるため、Source、Context、Wiki を Praxios の仕組みに沿って扱う。
+
+## 起動時の必須動作
+
+- 作業開始前に必ず @context.md を読む。
+- context.md を、この Task の正規コンテキストとして扱う。
+- chat 履歴だけを作業前提にせず、context.md の内容を優先する。
+- 不足情報や矛盾がある場合は、推測せずユーザーに確認する。
+
 ## 検証用コンテキスト
 
 Praxios AGENTS.md 読み込み確認キーワード: praxios-agent-load-check
@@ -88,10 +100,59 @@ Praxios AGENTS.md 読み込み確認キーワード: praxios-agent-load-check
 AIに「praxios-agent-load-check について知ってる？」と質問されたら、
 この AGENTS.md が読み込まれていることを伝える。
 
-## Task Context
+## Task と Source の扱い
 
-このタスクディレクトリで作業を始める前に、必ず context.md を読む。
-context.md を、この Task の正規コンテキストとして扱う。
+- このディレクトリは Praxios の Task Workspace である。
+- ディレクトリ名を taskId として扱える。
+- ユーザーが資料、メモ、メール、Slack、会議録、URL、ファイル内容などを渡した場合、
+  それを作業記憶だけに残さず Source として保存することを優先する。
+- Source は Context の根拠である。Context に反映する情報は、可能な限り Source に辿れる状態にする。
+- sourceUrl、sourceRefId、provider などが不明な場合は捏造しない。
+
+## Source 追加・ingest の動作
+
+ユーザーが「ソースを追加」「これを取り込んで」「ingestして」
+「この情報をコンテキストに反映して」などと言った場合は、次の順で動く。
+
+(1) 追加対象の内容、sourceType、sourceTitle、taskId を確認する。
+(2) Praxios API が利用できる場合は POST /sources で Source を登録する。
+(3) taskId を付け、processNow: true を指定して proposal を生成する。
+(4) 生成された task_context proposal を確認する。
+(5) ユーザーが明示的に Context 更新を依頼している場合は、対応する proposal を apply する。
+(6) 明示的な更新依頼でない場合は、pending proposal として提示し、適用前に確認する。
+
+## ユーザー発話が Context っぽい場合
+
+ユーザーがタスクの前提、決定事項、制約、未確認事項、次アクションなどを話した場合、
+それは Context 候補として扱う。
+
+- 短い発話でも、タスクに影響するなら manual_note Source として保存する。
+- その後、Context に反映するか確認する。
+- ユーザーが「覚えて」「contextに入れて」「反映して」と言った場合は、
+  Source 化したうえで Context 更新まで進める。
+- 重要な条件、金額、日付、相手名、期限、合意事項は特に漏らさない。
+
+## Context 更新の原則
+
+- context.md は作業前提の正本である。
+- Context は Source の丸写しではなく、タスク遂行に必要な形へ整理する。
+- 更新時は、確定事項、未確認事項、変更点、根拠 Source を分けて考える。
+- 矛盾する情報がある場合は、古い情報を黙って上書きせず、矛盾としてユーザーに確認する。
+
+## Wiki の扱い
+
+- Wiki は再利用可能な業務知識の保存先である。
+- Task 固有の一時情報は、まず Context に反映する。
+- 複数タスクで再利用できる手順、用語、判断基準、テンプレート、業務ルールは Wiki 候補にする。
+- wiki_update proposal は自動適用しない。
+- ユーザーが「Wikiに追加して」「ナレッジ化して」と明示した場合、または承認を得た場合だけ適用する。
+
+## 安全な振る舞い
+
+- 外部サービスへの書き込み、メール送信、公開範囲変更は勝手に行わない。
+- 根拠のない推測を Context や Wiki に入れない。
+- API が使えない場合は、手作業でファイルを直接更新する前にユーザーへ確認する。
+- 変更後は、何を Source にし、何を Context / Wiki に反映したか簡潔に報告する。
 `;
 
 const emptyLatestUpdate = "まだ更新はありません。";

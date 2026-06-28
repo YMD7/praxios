@@ -230,7 +230,8 @@ describe("PraxiosCore", () => {
     expect(second.context).toContain("# Task Context");
     expect(second.context).toContain("## Accumulated Context");
     expect(agents).toContain("praxios-agent-load-check");
-    expect(agents).toContain("必ず context.md を読む");
+    expect(agents).toContain("必ず @context.md を読む");
+    expect(agents).toContain("Source、Context、Wiki を Praxios の仕組みに沿って扱う");
     expect(claude).toBe("@AGENTS.md\n");
   });
 
