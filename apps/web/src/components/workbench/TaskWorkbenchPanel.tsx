@@ -24,11 +24,13 @@ const minAiPaneWidth = 420;
 type ContextDisplayMode = "rendered" | "raw";
 
 export function TaskWorkbenchPanel({
+  isActive,
   onRegisterTerminal,
   onTaskLoaded,
   tab
 }: {
-  onRegisterTerminal: (handle: AgentTerminalPanelHandle | null) => void;
+  isActive: boolean;
+  onRegisterTerminal: (tabId: string, handle: AgentTerminalPanelHandle | null) => void;
   onTaskLoaded: (task: Task) => void;
   tab: TaskWorkbenchTab;
 }) {
@@ -66,9 +68,9 @@ export function TaskWorkbenchPanel({
   }, [load]);
 
   useEffect(() => {
-    onRegisterTerminal(terminalRef.current);
-    return () => onRegisterTerminal(null);
-  }, [onRegisterTerminal]);
+    onRegisterTerminal(tab.id, terminalRef.current);
+    return () => onRegisterTerminal(tab.id, null);
+  }, [onRegisterTerminal, tab.id]);
 
   return (
     <TaskSplitLayout storageKey={`praxios-task-workbench-${tab.taskId}`}>
@@ -87,7 +89,12 @@ export function TaskWorkbenchPanel({
         ),
         ai: (
           <div className="h-full min-h-0 min-w-0 overflow-hidden">
-            <AgentTerminalPanel ref={terminalRef} tabId={tab.id} taskId={tab.taskId} />
+            <AgentTerminalPanel
+              isActive={isActive}
+              ref={terminalRef}
+              tabId={tab.id}
+              taskId={tab.taskId}
+            />
           </div>
         )
       }}

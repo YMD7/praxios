@@ -16,6 +16,7 @@ export interface AgentTerminalPanelHandle {
 }
 
 interface AgentTerminalPanelProps {
+  isActive: boolean;
   tabId?: string;
   taskId?: string | undefined;
 }
@@ -29,7 +30,7 @@ const statusLabels: Record<TerminalStatus, string> = {
 };
 
 export const AgentTerminalPanel = forwardRef<AgentTerminalPanelHandle, AgentTerminalPanelProps>(
-  function AgentTerminalPanel({ tabId = "home", taskId }, ref) {
+  function AgentTerminalPanel({ isActive, tabId = "home", taskId }, ref) {
     const [agent, setAgent] = useState<AgentId>("codex");
     const [status, setStatus] = useState<TerminalStatus>("idle");
     const terminalRef = useRef<WtermTerminalHandle | null>(null);
@@ -88,7 +89,11 @@ export const AgentTerminalPanel = forwardRef<AgentTerminalPanelHandle, AgentTerm
           <Tabs
             className="w-auto"
             defaultValue={agent}
-            onValueChange={(value) => setAgent(value as AgentId)}
+            onValueChange={(value) => {
+              if (value === agent) return;
+              terminalRef.current?.closeSession();
+              setAgent(value as AgentId);
+            }}
             value={agent}
           >
             <TabsList className="bg-terminal-control text-terminal-muted">
@@ -115,6 +120,7 @@ export const AgentTerminalPanel = forwardRef<AgentTerminalPanelHandle, AgentTerm
         <div className="min-h-0 flex-1">
           <WtermTerminal
             agent={agent}
+            isActive={isActive}
             onStatusChange={setStatus}
             ref={terminalRef}
             tabId={tabId}

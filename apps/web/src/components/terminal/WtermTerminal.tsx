@@ -69,6 +69,7 @@ export interface WtermTerminalHandle {
 
 interface WtermTerminalProps {
   agent: AgentId;
+  isActive: boolean;
   onStatusChange?: (status: TerminalStatus) => void;
   tabId: string;
   taskId?: string | undefined;
@@ -88,7 +89,7 @@ function getTerminalWebSocketUrl(agent: AgentId, tabId: string, taskId?: string)
 }
 
 export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>(
-  function WtermTerminal({ agent, onStatusChange, tabId, taskId }, ref) {
+  function WtermTerminal({ agent, isActive, onStatusChange, tabId, taskId }, ref) {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const terminalRef = useRef<XtermTerminal | null>(null);
     const fitAddonRef = useRef<FitAddon | null>(null);
@@ -118,6 +119,23 @@ export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>
       const socket = socketRef.current;
       if (socket?.readyState === WebSocket.OPEN) {
         socket.send(data);
+      }
+    }, []);
+
+    const fitTerminal = useCallback(() => {
+      const container = containerRef.current;
+      const terminal = terminalRef.current;
+      const fitAddon = fitAddonRef.current;
+      if (!container || container.clientWidth === 0 || container.clientHeight === 0) return;
+      if (!terminal || !fitAddon) return;
+
+      fitAddon.fit();
+      const size = { cols: terminal.cols, rows: terminal.rows };
+      lastSizeRef.current = size;
+
+      const socket = socketRef.current;
+      if (socket?.readyState === WebSocket.OPEN) {
+        socket.send(`\x1b[RESIZE:${size.cols};${size.rows}]`);
       }
     }, []);
 
@@ -154,8 +172,7 @@ export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>
       terminal.open(container);
 
       const fit = () => {
-        fitAddon.fit();
-        lastSizeRef.current = { cols: terminal.cols, rows: terminal.rows };
+        fitTerminal();
       };
       const fitSoon = () => window.requestAnimationFrame(fit);
       const resizeObserver = new ResizeObserver(fitSoon);
@@ -187,7 +204,7 @@ export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>
         fitAddonRef.current = null;
         terminalRef.current = null;
       };
-    }, [sendData]);
+    }, [fitTerminal, sendData]);
 
     useEffect(() => {
       const terminal = terminalRef.current;
@@ -195,6 +212,13 @@ export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>
         terminal.options.theme = terminalTheme;
       }
     }, [terminalTheme]);
+
+    useEffect(() => {
+      if (!isActive) return undefined;
+
+      const frame = window.requestAnimationFrame(fitTerminal);
+      return () => window.cancelAnimationFrame(frame);
+    }, [fitTerminal, isActive]);
 
     useEffect(() => {
       const terminal = terminalRef.current;
