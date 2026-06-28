@@ -142,7 +142,8 @@ describe("Praxios API validation", () => {
     expect(first.status).toBe(200);
     expect(second.status).toBe(200);
     expect(firstBody.workspace.path).toBe(path.join(tempDir, ".praxios", "tasks", task.id));
-    expect(secondBody.workspace.context).toContain("## Current Summary");
+    expect(secondBody.workspace.context).toMatch(/^# Current Summary$/m);
+    expect(secondBody.workspace.context).not.toMatch(/^## Current Summary$/m);
     expect(secondBody.workspace.context).not.toContain("# Task Context");
     expect(secondBody.workspace.context).not.toContain("## Operating Instructions");
     expect(

@@ -228,8 +228,10 @@ describe("PraxiosCore", () => {
     expect(fs.existsSync(first.contextPath)).toBe(true);
     expect(fs.existsSync(path.join(first.path, "sources"))).toBe(true);
     expect(second.contextPath).toBe(first.contextPath);
-    expect(second.context).toContain("## Current Summary");
-    expect(second.context).toContain("## Accumulated Context");
+    expect(second.context).toMatch(/^# Current Summary$/m);
+    expect(second.context).toMatch(/^# Accumulated Context$/m);
+    expect(second.context).not.toMatch(/^## Current Summary$/m);
+    expect(second.context).not.toMatch(/^## Accumulated Context$/m);
     expect(second.context).not.toContain("# Task Context");
     expect(second.context).not.toContain("## Operating Instructions");
     expect(agents).toContain("praxios-agent-load-check");
@@ -266,7 +268,7 @@ describe("PraxiosCore", () => {
     const context = fs.readFileSync(workspace.contextPath, "utf8");
 
     expect(applied.status).toBe("applied");
-    expect(context).toContain("## Latest Update");
+    expect(context).toMatch(/^# Latest Update$/m);
     expect(context).toContain(`Source: ${result.source.id}`);
     expect(context).toContain("- title: Finance approval");
     expect(context).toContain(

@@ -117,6 +117,23 @@ export function WorkbenchShell() {
     navigate(nextTab.kind === "home" ? "/" : `/tasks/${nextTab.taskId}`);
   }
 
+  function handleTaskDeleted(taskId: string) {
+    const tab = taskTabs.find((item) => item.taskId === taskId);
+    if (!tab) return;
+
+    const shouldNavigate = activeTabId === tab.id || routeTaskId === taskId;
+    const nextTab = getFallbackTab(openTabs, tab.id, activeTabId);
+
+    closingTaskIdsRef.current.add(taskId);
+    closeTab(tab.id, nextTab.id);
+    terminalRefs.current.get(tab.id)?.closeSession();
+    terminalRefs.current.delete(tab.id);
+
+    if (shouldNavigate) {
+      navigate(nextTab.kind === "home" ? "/" : `/tasks/${nextTab.taskId}`);
+    }
+  }
+
   function registerTerminal(tabId: string, handle: AgentTerminalPanelHandle | null) {
     if (handle) {
       terminalRefs.current.set(tabId, handle);
@@ -143,7 +160,7 @@ export function WorkbenchShell() {
               tab={routeTaskTab}
             />
           ) : (
-            <HomeTabPanel />
+            <HomeTabPanel onTaskDeleted={handleTaskDeleted} />
           )}
         </div>
       </main>
@@ -237,12 +254,12 @@ function TabStrip({
   );
 }
 
-function HomeTabPanel() {
+function HomeTabPanel({ onTaskDeleted }: { onTaskDeleted: (taskId: string) => void }) {
   return (
     <div className="h-full min-h-0 overflow-auto p-5">
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/tasks" element={<TaskList />} />
+        <Route path="/tasks" element={<TaskList onTaskDeleted={onTaskDeleted} />} />
         <Route path="/sources" element={<SourceList />} />
         <Route path="/sources/:sourceId" element={<SourceViewer />} />
         <Route path="/tasks/:taskId" element={<Home />} />

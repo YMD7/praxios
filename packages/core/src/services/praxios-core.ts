@@ -59,15 +59,15 @@ interface ContextProjectionUpdate {
   taskId: string;
 }
 
-const initialTaskContext = `## Current Summary
+const initialTaskContext = `# Current Summary
 
 まだ要約はありません。
 
-## Latest Update
+# Latest Update
 
 まだ更新はありません。
 
-## Accumulated Context
+# Accumulated Context
 
 まだ承認済み Context はありません。
 `;
@@ -643,6 +643,7 @@ function ensureContextDocument(content: string): string {
   let next = content.trim().length > 0 ? content.trimEnd() : initialTaskContext.trimEnd();
   next = stripGeneratedContextTitle(next);
   next = removeMarkdownSection(next, "Operating Instructions");
+  next = normalizeContextSectionHeadings(next);
   const requiredSections = [
     ["Current Summary", "まだ要約はありません。"],
     ["Latest Update", emptyLatestUpdate],
@@ -650,8 +651,8 @@ function ensureContextDocument(content: string): string {
   ] as const;
 
   for (const [heading, fallback] of requiredSections) {
-    if (!next.includes(`## ${heading}`)) {
-      next = `${next}\n\n## ${heading}\n\n${fallback}`;
+    if (!sectionPattern(heading).test(next)) {
+      next = `${next}\n\n# ${heading}\n\n${fallback}`;
     }
   }
 
@@ -692,7 +693,7 @@ function readMarkdownSection(content: string, heading: string): string {
 function replaceMarkdownSection(content: string, heading: string, body: string): string {
   const pattern = sectionPattern(heading);
   if (!pattern.test(content)) {
-    return `${content.trimEnd()}\n\n## ${heading}\n\n${body.trim()}\n`;
+    return `${content.trimEnd()}\n\n# ${heading}\n\n${body.trim()}\n`;
   }
 
   return content.replace(pattern, (_match, prefix: string, _body: string, suffix: string) => {
@@ -702,7 +703,16 @@ function replaceMarkdownSection(content: string, heading: string, body: string):
 
 function sectionPattern(heading: string): RegExp {
   return new RegExp(
-    `(## ${escapeRegExp(heading)}\\n\\n)([\\s\\S]*?)(\\n(?=## )|$)`
+    `(^#{1,2} ${escapeRegExp(heading)}\\n\\n)([\\s\\S]*?)(\\n(?=#{1,2} )|$)`,
+    "m"
+  );
+}
+
+function normalizeContextSectionHeadings(content: string): string {
+  return ["Current Summary", "Latest Update", "Accumulated Context"].reduce(
+    (next, heading) =>
+      next.replace(new RegExp(`^## ${escapeRegExp(heading)}$`, "m"), `# ${heading}`),
+    content
   );
 }
 

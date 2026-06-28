@@ -7,7 +7,11 @@ import type { Task } from "@praxios/core";
 
 const priorities: TaskPriority[] = ["Low", "Normal", "High", "Urgent"];
 
-export function TaskList() {
+interface TaskListProps {
+  onTaskDeleted?: (taskId: string) => void;
+}
+
+export function TaskList({ onTaskDeleted }: TaskListProps) {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [title, setTitle] = useState("");
@@ -56,6 +60,7 @@ export function TaskList() {
     try {
       await api.deleteTask(task.id);
       setTasks((current) => current.filter((item) => item.id !== task.id));
+      onTaskDeleted?.(task.id);
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Failed to delete task");
     } finally {
