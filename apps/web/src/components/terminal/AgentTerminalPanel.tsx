@@ -1,7 +1,5 @@
-import { Bot, Circle, TerminalSquare } from "lucide-react";
-import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { Circle } from "lucide-react";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { agentOptions, type AgentId } from "./types";
@@ -33,10 +31,6 @@ export const AgentTerminalPanel = forwardRef<AgentTerminalPanelHandle, AgentTerm
     const [agent, setAgent] = useState<AgentId>("codex");
     const [status, setStatus] = useState<TerminalStatus>("idle");
     const terminalRef = useRef<WtermTerminalHandle | null>(null);
-    const selectedAgent = useMemo(
-      () => agentOptions.find((option) => option.id === agent) ?? agentOptions[0]!,
-      [agent]
-    );
 
     useImperativeHandle(
       ref,
@@ -49,52 +43,39 @@ export const AgentTerminalPanel = forwardRef<AgentTerminalPanelHandle, AgentTerm
 
     return (
       <section className="flex h-full min-h-0 flex-col bg-terminal-background text-terminal-foreground">
-        <header className="flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-terminal-border px-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-terminal-accent text-terminal-accent-foreground">
-              <Bot aria-hidden="true" className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="truncate text-sm font-semibold tracking-normal">AI Terminal</h1>
-              <p className="truncate text-xs text-terminal-muted">{selectedAgent.description}</p>
-            </div>
-          </div>
-          <div className="flex shrink-0 items-center gap-3">
-            <div className="flex items-center gap-2 text-xs text-terminal-muted">
-              <Circle
-                aria-hidden="true"
-                className={cn(
-                  "h-2.5 w-2.5 fill-current",
-                  status === "connected" && "text-emerald-400",
-                  status === "connecting" && "text-amber-300",
-                  status === "error" && "text-red-400",
-                  (status === "idle" || status === "closed") && "text-slate-500"
-                )}
-              />
-              <span>{statusLabels[status]}</span>
-            </div>
-            <Button
-              className="border-terminal-border bg-terminal-control text-terminal-foreground hover:bg-terminal-control-hover"
-              size="sm"
-              variant="outline"
-            >
-              <TerminalSquare aria-hidden="true" />
-              Local
-            </Button>
+        <header className="flex min-h-12 shrink-0 items-center justify-between gap-3 border-b border-terminal-border px-4 py-2">
+          <h2 className="truncate text-sm font-semibold tracking-normal">AI Terminal</h2>
+          <div className="flex shrink-0 items-center gap-2 text-xs text-terminal-muted">
+            <Circle
+              aria-hidden="true"
+              className={cn(
+                "h-2.5 w-2.5 fill-current",
+                status === "connected" && "text-emerald-400",
+                status === "connecting" && "text-amber-300",
+                status === "error" && "text-red-400",
+                (status === "idle" || status === "closed") && "text-slate-500"
+              )}
+            />
+            <span>{statusLabels[status]}</span>
           </div>
         </header>
 
-        <div className="flex shrink-0 items-center gap-3 border-b border-terminal-border px-4 py-2">
+        <div className="flex shrink-0 items-center border-b border-terminal-border px-4 py-2">
           <Tabs
             className="w-auto"
             defaultValue={agent}
             onValueChange={(value) => setAgent(value as AgentId)}
             value={agent}
           >
-            <TabsList className="bg-terminal-control text-terminal-muted">
+            <TabsList className="h-auto rounded-sm border border-terminal-border bg-terminal-background p-0">
               {agentOptions.map((option) => (
                 <TabsTrigger
-                  className="data-[state=active]:bg-terminal-tab-active data-[state=active]:text-terminal-tab-active-foreground"
+                  className={cn(
+                    "h-8 px-3 py-0 text-xs font-medium text-terminal-muted",
+                    "border-r border-terminal-border rounded-none last:border-r-0",
+                    "data-[state=active]:bg-terminal-tab-active data-[state=active]:text-terminal-tab-active-foreground",
+                    "data-[state=active]:font-semibold"
+                  )}
                   key={option.id}
                   value={option.id}
                 >
@@ -103,13 +84,6 @@ export const AgentTerminalPanel = forwardRef<AgentTerminalPanelHandle, AgentTerm
               ))}
             </TabsList>
           </Tabs>
-          <Separator className="h-5 bg-terminal-border" orientation="vertical" />
-          <p className="truncate text-xs text-terminal-muted">
-            Command:{" "}
-            <span className="font-mono text-terminal-foreground">
-              {selectedAgent.command}
-            </span>
-          </p>
         </div>
 
         <div className="min-h-0 flex-1">
