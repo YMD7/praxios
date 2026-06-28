@@ -228,10 +228,13 @@ describe("PraxiosCore", () => {
     expect(fs.existsSync(first.contextPath)).toBe(true);
     expect(fs.existsSync(path.join(first.path, "sources"))).toBe(true);
     expect(second.contextPath).toBe(first.contextPath);
-    expect(second.context).toContain("# Task Context");
+    expect(second.context).toContain("## Current Summary");
     expect(second.context).toContain("## Accumulated Context");
+    expect(second.context).not.toContain("# Task Context");
+    expect(second.context).not.toContain("## Operating Instructions");
     expect(agents).toContain("praxios-agent-load-check");
     expect(agents).toContain("必ず @context.md を読む");
+    expect(agents).toContain("Context was updated");
     expect(agents).toContain("Source、Context、Wiki を Praxios の仕組みに沿って扱う");
     expect(claude).toBe("@AGENTS.md\n");
   });

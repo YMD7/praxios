@@ -59,14 +59,7 @@ interface ContextProjectionUpdate {
   taskId: string;
 }
 
-const initialTaskContext = `# Task Context
-
-## Operating Instructions
-
-このファイルを、この Task の正規コンテキストとして扱う。
-「Context was updated」と言われたら、Latest Update と Accumulated Context を確認する。
-
-## Current Summary
+const initialTaskContext = `## Current Summary
 
 まだ要約はありません。
 
@@ -91,6 +84,7 @@ const initialAgentInstructions = `# AGENTS.md
 - 作業開始前に必ず @context.md を読む。
 - context.md を、この Task の正規コンテキストとして扱う。
 - chat 履歴だけを作業前提にせず、context.md の内容を優先する。
+- ユーザーから「Context was updated」と言われたら、context.md の Latest Update と Accumulated Context を確認する。
 - 不足情報や矛盾がある場合は、推測せずユーザーに確認する。
 
 ## 検証用コンテキスト
@@ -647,16 +641,13 @@ function getMetadataString(metadata: JsonObject, key: string): string | null {
 
 function ensureContextDocument(content: string): string {
   let next = content.trim().length > 0 ? content.trimEnd() : initialTaskContext.trimEnd();
+  next = stripGeneratedContextTitle(next);
+  next = removeMarkdownSection(next, "Operating Instructions");
   const requiredSections = [
-    ["Operating Instructions", initialTaskContextSection("Operating Instructions")],
     ["Current Summary", "まだ要約はありません。"],
     ["Latest Update", emptyLatestUpdate],
     ["Accumulated Context", emptyAccumulatedContext]
   ] as const;
-
-  if (!next.startsWith("# Task Context")) {
-    next = `# Task Context\n\n${next}`;
-  }
 
   for (const [heading, fallback] of requiredSections) {
     if (!next.includes(`## ${heading}`)) {
@@ -715,8 +706,12 @@ function sectionPattern(heading: string): RegExp {
   );
 }
 
-function initialTaskContextSection(heading: string): string {
-  return readMarkdownSection(initialTaskContext, heading).trim();
+function removeMarkdownSection(content: string, heading: string): string {
+  return content.replace(sectionPattern(heading), "").trim();
+}
+
+function stripGeneratedContextTitle(content: string): string {
+  return content.replace(/^# Task Context\s*\n+/, "").trim();
 }
 
 function sanitizeMarkdownLine(value: string): string {
