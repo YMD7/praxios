@@ -11,7 +11,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { Context } from "hono";
 import { z, ZodError } from "zod";
-import { listTerminalAgents } from "./terminal.js";
+import { closeTerminalSessionsForTask, listTerminalAgents } from "./terminal.js";
 
 const proposalStatusQuerySchema = z.enum(proposalStatuses).optional();
 const reviewBodySchema = z.object({
@@ -109,7 +109,13 @@ export function createApp(core = new PraxiosCore()) {
   });
 
   app.delete("/tasks/:taskId", (c) => {
-    core.deleteTask(c.req.param("taskId"));
+    const taskId = c.req.param("taskId");
+    if (!core.getTask(taskId)) {
+      return c.json({ error: "not_found", message: "Task not found" }, 404);
+    }
+
+    closeTerminalSessionsForTask(taskId);
+    core.deleteTask(taskId);
     return c.body(null, 204);
   });
 

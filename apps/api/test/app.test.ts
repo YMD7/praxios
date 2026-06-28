@@ -1,13 +1,49 @@
 import { PraxiosCore } from "@praxios/core";
+import { EventEmitter } from "node:events";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { WebSocket } from "ws";
 import { createApp } from "../src/app.js";
+import { closeTerminalSessionsForTask, handleTerminalConnection } from "../src/terminal.js";
 
 let tempDir: string;
 let core: PraxiosCore;
 let app: ReturnType<typeof createApp>;
+
+class TestTerminalSocket extends EventEmitter {
+  readyState = WebSocket.OPEN;
+  sent: string[] = [];
+
+  send(data: unknown) {
+    this.sent.push(String(data));
+  }
+
+  close() {
+    this.readyState = WebSocket.CLOSED;
+    this.emit("close");
+  }
+
+  detach() {
+    this.readyState = WebSocket.CLOSED;
+    this.emit("close");
+  }
+}
+
+function connectDetachedTaskTerminal(taskId: string) {
+  const socket = new TestTerminalSocket();
+  const url = new URL(
+    `http://localhost/terminal/ws?agent=codex&tabId=${encodeURIComponent(
+      `task:${taskId}`
+    )}&taskId=${encodeURIComponent(taskId)}`
+  );
+
+  handleTerminalConnection(socket as unknown as WebSocket, url, {
+    resolveTaskCwd: (id) => core.getTaskWorkspace(id).path
+  });
+  socket.detach();
+}
 
 beforeEach(() => {
   tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "praxios-api-"));
@@ -163,6 +199,7 @@ describe("Praxios API validation", () => {
       completionCriteria: "Task is gone."
     });
     const workspace = core.getTaskWorkspace(task.id);
+    connectDetachedTaskTerminal(task.id);
 
     const deleteResponse = await app.request(`/tasks/${task.id}`, {
       method: "DELETE"
@@ -172,6 +209,7 @@ describe("Praxios API validation", () => {
     expect(deleteResponse.status).toBe(204);
     expect(getResponse.status).toBe(404);
     expect(fs.existsSync(workspace.path)).toBe(false);
+    expect(closeTerminalSessionsForTask(task.id)).toBe(0);
   });
 
   it("returns 404 when deleting a missing task", async () => {

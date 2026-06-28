@@ -25,6 +25,7 @@ interface TerminalSession {
   pendingSize: { cols: number; rows: number };
   ptyProcess: pty.IPty | null;
   replayBufferBytes: number;
+  taskId: string | null;
 }
 
 const terminalAgents: Record<AgentId, AgentDefinition> = {
@@ -79,7 +80,7 @@ export function handleTerminalConnection(
   }
 
   const sessionKey = `${tabId}:${agent.id}`;
-  const session = getOrCreateSession(sessionKey, agent, cwd);
+  const session = getOrCreateSession(sessionKey, agent, cwd, taskId);
   cancelScheduledCleanup(session);
   session.clients.add(ws);
   if (session.outputBuffer) {
@@ -130,7 +131,12 @@ export function handleTerminalConnection(
   });
 }
 
-function getOrCreateSession(key: string, agent: AgentDefinition, cwd: string): TerminalSession {
+function getOrCreateSession(
+  key: string,
+  agent: AgentDefinition,
+  cwd: string,
+  taskId: string | null
+): TerminalSession {
   const existing = terminalSessions.get(key);
   if (existing) {
     if (existing.cwd === cwd) {
@@ -150,10 +156,23 @@ function getOrCreateSession(key: string, agent: AgentDefinition, cwd: string): T
     outputBuffer: "",
     pendingSize: { cols: 100, rows: 30 },
     ptyProcess: null,
-    replayBufferBytes: config.replayBufferBytes
+    replayBufferBytes: config.replayBufferBytes,
+    taskId
   };
   terminalSessions.set(key, session);
   return session;
+}
+
+export function closeTerminalSessionsForTask(taskId: string): number {
+  const sessions = Array.from(terminalSessions.values()).filter((session) => {
+    return session.taskId === taskId;
+  });
+
+  for (const session of sessions) {
+    closeSession(session, 1000, "Task deleted");
+  }
+
+  return sessions.length;
 }
 
 function spawnAgent(session: TerminalSession) {
