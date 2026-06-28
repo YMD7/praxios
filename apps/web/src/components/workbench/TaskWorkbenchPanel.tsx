@@ -1,5 +1,5 @@
 import type { Source, Task } from "@praxios/core";
-import { ExternalLink, FileText, RefreshCw } from "lucide-react";
+import { CodeXml, Eye, ExternalLink, FileText, RefreshCw } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import type {
   KeyboardEvent as ReactKeyboardEvent,
@@ -14,7 +14,6 @@ import { AgentTerminalPanel } from "@/components/terminal/AgentTerminalPanel";
 import type { AgentTerminalPanelHandle } from "@/components/terminal/AgentTerminalPanel";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api, type TaskWorkspaceInfo } from "@/api";
 import type { TaskWorkbenchTab } from "./types";
 
@@ -256,19 +255,19 @@ function ContextPane({
 }) {
   const [contextDisplayMode, setContextDisplayMode] = useState<ContextDisplayMode>("rendered");
   const context = workspace?.context ?? "";
+  const sectionHeadingClass = "text-sm font-semibold tracking-normal";
 
   return (
     <section className="flex h-full min-h-0 flex-col border-r bg-background">
       <header className="flex min-h-16 shrink-0 items-center justify-between gap-3 border-b bg-card px-4">
         <div className="min-w-0">
+          <h2 className={sectionHeadingClass}>Task</h2>
           <div className="flex items-center gap-2">
             <h1 className="truncate text-base font-semibold tracking-normal">
               {task?.title ?? "Loading task..."}
             </h1>
           </div>
-          <p className="truncate text-xs text-muted-foreground">
-            {workspace?.path ?? "Preparing workspace"}
-          </p>
+          <TaskStatusBadge status={task?.status} />
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Button onClick={onRefresh} size="icon" title="Refresh context" type="button" variant="ghost">
@@ -277,59 +276,66 @@ function ContextPane({
         </div>
       </header>
 
-      <Tabs className="flex min-h-0 flex-1 flex-col" defaultValue="context">
-        <div className="shrink-0 border-b bg-card px-4 py-2">
-          <TabsList>
-            <TabsTrigger value="context">Context</TabsTrigger>
-            <TabsTrigger value="sources">Sources</TabsTrigger>
-          </TabsList>
-        </div>
-        <ScrollArea className="min-h-0 flex-1">
-          <TabsContent className="m-0 grid gap-4 p-4" value="context">
-            {error && <div className="error text-sm">{error}</div>}
-            <section className="grid gap-2">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-sm font-semibold tracking-normal">context.md</h2>
-                <div className="inline-flex rounded-md border bg-muted p-0.5">
-                  {(["rendered", "raw"] as const).map((mode) => (
-                    <Button
-                      className="h-7 rounded px-2 text-xs"
-                      key={mode}
-                      onClick={() => setContextDisplayMode(mode)}
-                      size="sm"
-                      type="button"
-                      variant={contextDisplayMode === mode ? "secondary" : "ghost"}
-                    >
-                      {mode === "rendered" ? "Rendered" : "Raw"}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-              {contextDisplayMode === "raw" ? (
-                <pre className="min-h-[60vh] whitespace-pre-wrap rounded-md border bg-card p-3 text-xs leading-5">
-                  {loading && !workspace
-                    ? "Loading context..."
-                    : context || "No context file"}
-                </pre>
-              ) : (
-                <div className="min-h-[60vh] rounded-md border bg-card p-4">
-                  {loading && !workspace ? (
-                    <div className="text-sm text-muted-foreground">Loading context...</div>
-                  ) : context ? (
-                    <MarkdownDocument content={context} />
-                  ) : (
-                    <div className="text-sm text-muted-foreground">No context file</div>
-                  )}
-                </div>
-              )}
-            </section>
-          </TabsContent>
-          <TabsContent className="m-0 p-4" value="sources">
+      <ScrollArea className="min-h-0 flex-1">
+        <div className="grid gap-4 p-4">
+          {error && <div className="error text-sm">{error}</div>}
+          <section className="grid gap-2">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className={sectionHeadingClass}>Sources</h2>
+              <span className="text-xs text-muted-foreground">{sources.length}</span>
+            </div>
             <TaskSourceList loading={loading} sources={sources} />
-          </TabsContent>
-        </ScrollArea>
-      </Tabs>
+          </section>
+          <section className="grid gap-2">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className={sectionHeadingClass}>Context</h2>
+              <div className="inline-flex rounded-md border bg-muted p-0.5">
+                {(["rendered", "raw"] as const).map((mode) => (
+                  <Button
+                    className="h-7 rounded px-2 text-xs"
+                    key={mode}
+                    onClick={() => setContextDisplayMode(mode)}
+                    size="sm"
+                    type="button"
+                    title={mode === "rendered" ? "Rendered" : "Raw"}
+                    variant={contextDisplayMode === mode ? "secondary" : "ghost"}
+                  >
+                    {mode === "rendered" ? (
+                      <Eye aria-hidden="true" className="h-3.5 w-3.5" />
+                    ) : (
+                      <CodeXml aria-hidden="true" className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            {contextDisplayMode === "raw" ? (
+              <pre className="min-h-[60vh] whitespace-pre-wrap rounded-md border bg-card p-3 text-xs leading-5">
+                {loading && !workspace ? "Loading context..." : context || "No context file"}
+              </pre>
+            ) : (
+              <div className="min-h-[60vh] rounded-md border bg-card p-4">
+                {loading && !workspace ? (
+                  <div className="text-sm text-muted-foreground">Loading context...</div>
+                ) : context ? (
+                  <MarkdownDocument content={context} />
+                ) : (
+                  <div className="text-sm text-muted-foreground">No context file</div>
+                )}
+              </div>
+            )}
+          </section>
+        </div>
+      </ScrollArea>
     </section>
+  );
+}
+
+function TaskStatusBadge({ status }: { status: Task["status"] | undefined }) {
+  return (
+    <span className="mt-1 inline-flex h-5 w-fit items-center rounded border bg-muted px-2 text-[11px] font-medium uppercase leading-none text-muted-foreground">
+      {status ?? "loading"}
+    </span>
   );
 }
 
