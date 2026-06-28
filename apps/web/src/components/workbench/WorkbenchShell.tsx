@@ -217,14 +217,14 @@ function TabStrip({
   tabs: WorkbenchTab[];
 }) {
   return (
-    <div className="flex h-11 shrink-0 items-end gap-1 border-b bg-card px-2">
+    <div className="flex h-11 shrink-0 items-end border-b bg-card px-2">
       {tabs.map((tab) => (
         <div
           className={cn(
-            "mb-[-1px] flex h-9 max-w-[240px] items-center gap-1 rounded-t-md border px-2",
+            "flex h-9 max-w-[240px] items-center gap-1 border border-b-0 px-2",
             activeTabId === tab.id
-              ? "border-border border-b-background bg-background text-foreground"
-              : "border-transparent bg-muted/60 text-muted-foreground hover:bg-muted"
+              ? "border-border rounded-t-md bg-background text-foreground"
+              : "border-muted-foreground/30 bg-muted/60 text-muted-foreground hover:bg-muted/80"
           )}
           key={tab.id}
         >

@@ -259,10 +259,10 @@ function ContextPane({
 
   return (
     <section className="flex h-full min-h-0 flex-col border-r bg-background">
-      <header className="flex min-h-16 shrink-0 items-center justify-between gap-3 border-b bg-card px-4">
+      <header className="flex shrink-0 items-center justify-between gap-3 border-b bg-card px-4 py-3">
         <div className="min-w-0">
           <h2 className={sectionHeadingClass}>Task</h2>
-          <div className="flex items-center gap-2">
+          <div className="mt-1 flex items-center gap-2">
             <h1 className="truncate text-base font-semibold tracking-normal">
               {task?.title ?? "Loading task..."}
             </h1>
@@ -277,7 +277,7 @@ function ContextPane({
       </header>
 
       <ScrollArea className="min-h-0 flex-1">
-        <div className="grid gap-4 p-4">
+        <div className="grid gap-5 p-5">
           {error && <div className="error text-sm">{error}</div>}
           <section className="grid gap-2">
             <div className="flex items-center justify-between gap-3">
