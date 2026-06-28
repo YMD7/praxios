@@ -5,7 +5,7 @@ import {
   SearchCheck,
   X
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Link,
   Navigate,
@@ -44,6 +44,7 @@ export function WorkbenchShell() {
   const terminalRefs = useRef(new Map<string, AgentTerminalPanelHandle>());
   const initialRouteSyncedRef = useRef(false);
   const closingTaskIdsRef = useRef(new Set<string>());
+  const [mountedTaskTabIds, setMountedTaskTabIds] = useState<Set<string>>(() => new Set());
   const {
     activeTabId,
     closeTab,
@@ -63,10 +64,24 @@ export function WorkbenchShell() {
     () => taskTabs.find((tab) => tab.id === (routeTaskId ? getTaskTabId(routeTaskId) : "")),
     [routeTaskId, taskTabs]
   );
+  const mountedTaskTabs = useMemo(
+    () => taskTabs.filter((tab) => mountedTaskTabIds.has(tab.id) || tab.id === routeTaskTab?.id),
+    [mountedTaskTabIds, routeTaskTab?.id, taskTabs]
+  );
   const handleTaskLoaded = useCallback(
     (task: { id: string; title: string }) => updateTaskTabTitle(task.id, task.title),
     [updateTaskTabTitle]
   );
+
+  useEffect(() => {
+    if (!routeTaskTab) return;
+    setMountedTaskTabIds((current) => addMountedTabId(current, routeTaskTab.id));
+  }, [routeTaskTab]);
+
+  useEffect(() => {
+    const validTabIds = new Set(taskTabs.map((tab) => tab.id));
+    setMountedTaskTabIds((current) => filterMountedTabIds(current, validTabIds));
+  }, [taskTabs]);
 
   useEffect(() => {
     if (!initialRouteSyncedRef.current) {
@@ -118,8 +133,8 @@ export function WorkbenchShell() {
     const nextTab = getFallbackTab(openTabs, tab.id, activeTabId);
     closingTaskIdsRef.current.add(tab.taskId);
     closeTab(tab.id, nextTab.id);
-    terminalRefs.current.get(tab.id)?.closeSession();
     terminalRefs.current.delete(tab.id);
+    setMountedTaskTabIds((current) => removeMountedTabId(current, tab.id));
     navigate(nextTab.kind === "home" ? "/tasks" : `/tasks/${nextTab.taskId}`);
   }
 
@@ -134,19 +149,20 @@ export function WorkbenchShell() {
     closeTab(tab.id, nextTab.id);
     terminalRefs.current.get(tab.id)?.closeSession();
     terminalRefs.current.delete(tab.id);
+    setMountedTaskTabIds((current) => removeMountedTabId(current, tab.id));
 
     if (shouldNavigate) {
       navigate(nextTab.kind === "home" ? "/tasks" : `/tasks/${nextTab.taskId}`);
     }
   }
 
-  function registerTerminal(tabId: string, handle: AgentTerminalPanelHandle | null) {
+  const registerTerminal = useCallback((tabId: string, handle: AgentTerminalPanelHandle | null) => {
     if (handle) {
       terminalRefs.current.set(tabId, handle);
     } else {
       terminalRefs.current.delete(tabId);
     }
-  }
+  }, []);
 
   return (
     <div className="flex h-screen min-h-0 bg-background text-foreground">
@@ -158,16 +174,29 @@ export function WorkbenchShell() {
           onClose={closeWorkbenchTab}
           tabs={openTabs}
         />
-        <div className="min-h-0 flex-1">
-          {routeTaskTab ? (
-            <TaskWorkbenchPanel
-              onRegisterTerminal={(handle) => registerTerminal(routeTaskTab.id, handle)}
-              onTaskLoaded={handleTaskLoaded}
-              tab={routeTaskTab}
-            />
-          ) : (
-            <HomeTabPanel onTaskDeleted={handleTaskDeleted} />
+        <div className="relative min-h-0 flex-1 overflow-hidden">
+          {!routeTaskTab && (
+            <div className="absolute inset-0">
+              <HomeTabPanel onTaskDeleted={handleTaskDeleted} />
+            </div>
           )}
+          {mountedTaskTabs.map((tab) => (
+            <div
+              aria-hidden={routeTaskTab?.id !== tab.id}
+              className={cn(
+                "absolute inset-0",
+                routeTaskTab?.id === tab.id ? "block" : "hidden"
+              )}
+              key={tab.id}
+            >
+              <TaskWorkbenchPanel
+                isActive={routeTaskTab?.id === tab.id}
+                onRegisterTerminal={registerTerminal}
+                onTaskLoaded={handleTaskLoaded}
+                tab={tab}
+              />
+            </div>
+          ))}
         </div>
       </main>
     </div>
@@ -307,4 +336,31 @@ function getFallbackTab(tabs: WorkbenchTab[], closingTabId: string, activeTabId:
 
   const closingIndex = tabs.findIndex((tab) => tab.id === closingTabId);
   return tabs[closingIndex - 1] ?? tabs[closingIndex + 1] ?? tabs[0]!;
+}
+
+function addMountedTabId(current: Set<string>, tabId: string) {
+  if (current.has(tabId)) return current;
+  const next = new Set(current);
+  next.add(tabId);
+  return next;
+}
+
+function removeMountedTabId(current: Set<string>, tabId: string) {
+  if (!current.has(tabId)) return current;
+  const next = new Set(current);
+  next.delete(tabId);
+  return next;
+}
+
+function filterMountedTabIds(current: Set<string>, validTabIds: Set<string>) {
+  let changed = false;
+  const next = new Set<string>();
+  for (const tabId of current) {
+    if (validTabIds.has(tabId)) {
+      next.add(tabId);
+    } else {
+      changed = true;
+    }
+  }
+  return changed ? next : current;
 }

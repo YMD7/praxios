@@ -14,6 +14,7 @@ export interface AgentTerminalPanelHandle {
 }
 
 interface AgentTerminalPanelProps {
+  isActive: boolean;
   tabId?: string;
   taskId?: string | undefined;
 }
@@ -27,7 +28,7 @@ const statusLabels: Record<TerminalStatus, string> = {
 };
 
 export const AgentTerminalPanel = forwardRef<AgentTerminalPanelHandle, AgentTerminalPanelProps>(
-  function AgentTerminalPanel({ tabId = "home", taskId }, ref) {
+  function AgentTerminalPanel({ isActive, tabId = "home", taskId }, ref) {
     const [agent, setAgent] = useState<AgentId>("codex");
     const [status, setStatus] = useState<TerminalStatus>("idle");
     const terminalRef = useRef<WtermTerminalHandle | null>(null);
@@ -71,7 +72,11 @@ export const AgentTerminalPanel = forwardRef<AgentTerminalPanelHandle, AgentTerm
                     : "text-terminal-muted hover:bg-muted"
                 )}
                 key={option.id}
-                onClick={() => setAgent(option.id)}
+                onClick={() => {
+                  if (option.id === agent) return;
+                  terminalRef.current?.closeSession();
+                  setAgent(option.id);
+                }}
                 size="sm"
                 type="button"
                 variant="ghost"
@@ -85,6 +90,7 @@ export const AgentTerminalPanel = forwardRef<AgentTerminalPanelHandle, AgentTerm
         <div className="min-h-0 flex-1">
           <WtermTerminal
             agent={agent}
+            isActive={isActive}
             onStatusChange={setStatus}
             ref={terminalRef}
             tabId={tabId}

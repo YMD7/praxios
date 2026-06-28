@@ -17,10 +17,15 @@ export interface TerminalConnectionOptions {
 interface TerminalSession {
   agent: AgentDefinition;
   clients: Set<WebSocket>;
+  cleanupTimer: NodeJS.Timeout | null;
   cwd: string;
+  detachedTtlMs: number;
   key: string;
+  outputBuffer: string;
   pendingSize: { cols: number; rows: number };
   ptyProcess: pty.IPty | null;
+  replayBufferBytes: number;
+  taskId: string | null;
 }
 
 const terminalAgents: Record<AgentId, AgentDefinition> = {
@@ -39,6 +44,13 @@ const terminalAgents: Record<AgentId, AgentDefinition> = {
 const resizePattern = /^\x1b\[RESIZE:(\d+);(\d+)\]$/;
 const closeCommand = "\x1b[TERMINAL:CLOSE]";
 const terminalSessions = new Map<string, TerminalSession>();
+const defaultDetachedTtlMs = 30 * 60 * 1000;
+const defaultReplayBufferBytes = 256 * 1024;
+
+export interface TerminalSessionConfig {
+  detachedTtlMs: number;
+  replayBufferBytes: number;
+}
 
 export function listTerminalAgents() {
   return Object.values(terminalAgents);
@@ -68,8 +80,12 @@ export function handleTerminalConnection(
   }
 
   const sessionKey = `${tabId}:${agent.id}`;
-  const session = getOrCreateSession(sessionKey, agent, cwd);
+  const session = getOrCreateSession(sessionKey, agent, cwd, taskId);
+  cancelScheduledCleanup(session);
   session.clients.add(ws);
+  if (session.outputBuffer) {
+    ws.send(session.outputBuffer);
+  }
   ws.send(`\r\n\x1b[90m[attached ${agent.label}: ${agent.command}]\x1b[0m\r\n`);
 
   ws.on("message", (message: RawData, isBinary) => {
@@ -104,14 +120,23 @@ export function handleTerminalConnection(
   });
 
   ws.on("close", () => {
+    if (terminalSessions.get(session.key) !== session) {
+      return;
+    }
+
     session.clients.delete(ws);
     if (session.clients.size === 0) {
-      closeSession(session);
+      scheduleDetachedCleanup(session);
     }
   });
 }
 
-function getOrCreateSession(key: string, agent: AgentDefinition, cwd: string): TerminalSession {
+function getOrCreateSession(
+  key: string,
+  agent: AgentDefinition,
+  cwd: string,
+  taskId: string | null
+): TerminalSession {
   const existing = terminalSessions.get(key);
   if (existing) {
     if (existing.cwd === cwd) {
@@ -120,16 +145,34 @@ function getOrCreateSession(key: string, agent: AgentDefinition, cwd: string): T
     closeSession(existing, 1000, "Task workspace changed");
   }
 
+  const config = readTerminalSessionConfig();
   const session: TerminalSession = {
     agent,
     clients: new Set<WebSocket>(),
+    cleanupTimer: null,
     cwd,
+    detachedTtlMs: config.detachedTtlMs,
     key,
+    outputBuffer: "",
     pendingSize: { cols: 100, rows: 30 },
-    ptyProcess: null
+    ptyProcess: null,
+    replayBufferBytes: config.replayBufferBytes,
+    taskId
   };
   terminalSessions.set(key, session);
   return session;
+}
+
+export function closeTerminalSessionsForTask(taskId: string): number {
+  const sessions = Array.from(terminalSessions.values()).filter((session) => {
+    return session.taskId === taskId;
+  });
+
+  for (const session of sessions) {
+    closeSession(session, 1000, "Task deleted");
+  }
+
+  return sessions.length;
 }
 
 function spawnAgent(session: TerminalSession) {
@@ -173,6 +216,8 @@ function spawnAgent(session: TerminalSession) {
 }
 
 function broadcast(session: TerminalSession, data: string) {
+  appendOutputBuffer(session, data);
+
   for (const client of session.clients) {
     if (client.readyState === WebSocket.OPEN) {
       client.send(data);
@@ -181,7 +226,10 @@ function broadcast(session: TerminalSession, data: string) {
 }
 
 function closeSession(session: TerminalSession, code?: number, reason?: string) {
-  terminalSessions.delete(session.key);
+  if (terminalSessions.get(session.key) === session) {
+    terminalSessions.delete(session.key);
+  }
+  cancelScheduledCleanup(session);
 
   if (session.ptyProcess) {
     session.ptyProcess.kill();
@@ -194,6 +242,40 @@ function closeSession(session: TerminalSession, code?: number, reason?: string) 
     }
   }
   session.clients.clear();
+}
+
+function scheduleDetachedCleanup(session: TerminalSession) {
+  if (session.cleanupTimer) return;
+  if (session.detachedTtlMs <= 0) {
+    closeSession(session);
+    return;
+  }
+
+  session.cleanupTimer = setTimeout(() => {
+    if (terminalSessions.get(session.key) === session) {
+      closeSession(session);
+    }
+  }, session.detachedTtlMs);
+}
+
+function cancelScheduledCleanup(session: TerminalSession) {
+  if (!session.cleanupTimer) return;
+  clearTimeout(session.cleanupTimer);
+  session.cleanupTimer = null;
+}
+
+function appendOutputBuffer(session: TerminalSession, data: string) {
+  if (session.replayBufferBytes <= 0) {
+    session.outputBuffer = "";
+    return;
+  }
+
+  session.outputBuffer += data;
+
+  while (Buffer.byteLength(session.outputBuffer, "utf8") > session.replayBufferBytes) {
+    const dropLength = Math.max(1, Math.floor(session.outputBuffer.length / 4));
+    session.outputBuffer = session.outputBuffer.slice(dropLength);
+  }
 }
 
 function resolveTerminalCwd(
@@ -246,4 +328,26 @@ export function buildTerminalEnv(
   env.CLICOLOR = "1";
   env.FORCE_COLOR = "1";
   return env;
+}
+
+export function readTerminalSessionConfig(
+  sourceEnv: NodeJS.ProcessEnv = process.env
+): TerminalSessionConfig {
+  return {
+    detachedTtlMs: readNonNegativeIntegerEnv(
+      sourceEnv.TERMINAL_DETACHED_TTL_MS,
+      defaultDetachedTtlMs
+    ),
+    replayBufferBytes: readNonNegativeIntegerEnv(
+      sourceEnv.TERMINAL_REPLAY_BUFFER_BYTES,
+      defaultReplayBufferBytes
+    )
+  };
+}
+
+function readNonNegativeIntegerEnv(value: string | undefined, fallback: number) {
+  if (value === undefined) return fallback;
+
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
