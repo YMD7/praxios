@@ -49,6 +49,7 @@
 }
 
 :root {
+  /* shadcn/ui の基本セマンティックトークン。 */
   --background: #eff0f2;
   --foreground: #18202f;
   --card: #eff0f2;
@@ -68,8 +69,10 @@
   --border: #b5c3d6;
   --input: #cbd3df;
   --ring: #4f7fbd;
+  /* Praxios の作業体験を支えるアプリケーショントークン。 */
   --link: #2458a6;
   --focus: #dbe8ff;
+  /* Workbench のグローバルナビゲーション用トークン。 */
   --sidebar: #e8edf5;
   --sidebar-foreground: #18202f;
   --sidebar-muted: #5f6e85;
@@ -78,6 +81,7 @@
   --button-secondary: #eef2f7;
   --button-secondary-foreground: #2d3748;
   --button-secondary-hover: #e1e7f0;
+  /* 状態表示用トークン。 */
   --success-background: #edf4ee;
   --success-foreground: #246b47;
   --warning: #b7791f;
@@ -86,19 +90,15 @@
   --error-border: #f1c0bd;
   --error-background: #fff1f0;
   --error-foreground: #9b2f28;
+  /* Markdown、Source、Context のコード表示用トークン。 */
   --code-background: #f3f6fb;
   --code-foreground: #1f2937;
   --inline-code: #2f3f55;
   /*
-   * ターミナルパネル（右ペイン）はライト/ダークに追従させず、常にダークで固定する。
-   * 起動するエージェント（Claude Code 等）のテーマを外部から取得・指定できないため、
-   * xterm の背景色とエージェントが想定する明暗がズレて表示が崩れるのを防ぐ目的。
-   * このため :root にダーク値を置き、:root.dark には敢えて再定義しない（xterm 側は WtermTerminal.tsx で固定）。
-   * 例外: --terminal-tab-active* は左ペイン（ContextPane）のトグル用でテーマ追従させる。
+   * ターミナルパネル（右ペイン）はライト/ダークに追従せず、常にダークで固定する。
+   * 起動するエージェントのテーマを外部から取得・指定できないため、xterm 背景と差分を防ぐ。
    */
   --terminal-background: #0d1110;
-  /* ヘッダー/トグルバー用。xterm キャンバス背景 #1c1917 より一段明るくして端末本体と区別する */
-  --terminal-header: #2a2623;
   --terminal-foreground: #eef7f1;
   --terminal-muted: #94a39b;
   --terminal-border: #26322d;
@@ -120,6 +120,7 @@
 }
 
 :root.dark {
+  /* shadcn/ui の基本セマンティックトークン。 */
   --background: #101411;
   --foreground: #edf5ef;
   --card: #171d1a;
@@ -139,8 +140,10 @@
   --border: #2d3831;
   --input: #3a463f;
   --ring: #77d6a0;
+  /* Praxios の作業体験を支えるアプリケーショントークン。 */
   --link: #8ab8ff;
   --focus: #1d3f2e;
+  /* Workbench のグローバルナビゲーション用トークン。 */
   --sidebar: #0b1110;
   --sidebar-foreground: #eef7f1;
   --sidebar-muted: #8da098;
@@ -149,6 +152,7 @@
   --button-secondary: #202822;
   --button-secondary-foreground: #dce8df;
   --button-secondary-hover: #2a3530;
+  /* 状態表示用トークン。 */
   --success-background: #173025;
   --success-foreground: #89d8aa;
   --warning: #f4c96a;
@@ -157,6 +161,7 @@
   --error-border: #6f302d;
   --error-background: #331817;
   --error-foreground: #ffb4ad;
+  /* Markdown、Source、Context のコード表示用トークン。 */
   --code-background: #0b0f0d;
   --code-foreground: #d8f3df;
   --inline-code: #c8d5ce;
