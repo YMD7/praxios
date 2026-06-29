@@ -304,7 +304,7 @@ function ContextPane({
                       "h-7 cursor-pointer rounded px-2 text-xs",
                       contextDisplayMode === mode
                         ? "bg-terminal-tab-active text-terminal-tab-active-foreground hover:bg-terminal-tab-active hover:text-terminal-tab-active-foreground"
-                        : "text-terminal-muted hover:bg-muted"
+                        : "text-muted-foreground hover:bg-muted"
                     )}
                     key={mode}
                     onClick={() => setContextDisplayMode(mode)}

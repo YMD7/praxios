@@ -1,4 +1,5 @@
 import { FitAddon } from "@xterm/addon-fit";
+import { WebglAddon } from "@xterm/addon-webgl";
 import { Terminal as XtermTerminal } from "@xterm/xterm";
 import type { ITheme } from "@xterm/xterm";
 import {
@@ -9,7 +10,6 @@ import {
   useRef,
   useState
 } from "react";
-import { useSystemColorScheme, type SystemColorScheme } from "@/lib/use-system-theme";
 import type { AgentId } from "./types";
 
 type TerminalStatus = "idle" | "connecting" | "connected" | "closed" | "error";
@@ -17,49 +17,30 @@ type TerminalStatus = "idle" | "connecting" | "connected" | "closed" | "error";
 const closeCommand = "\x1b[TERMINAL:CLOSE]";
 const apiBase = import.meta.env.VITE_API_URL ?? "/api";
 
-const terminalThemes: Record<SystemColorScheme, ITheme> = {
-  light: {
-    background: "#F0EDEC",
-    black: "#F0EDEC",
-    blue: "#286486",
-    brightBlack: "#CFC1BA",
-    brightBlue: "#1D5573",
-    brightCyan: "#2B747C",
-    brightGreen: "#3F5A22",
-    brightMagenta: "#7B3B70",
-    brightRed: "#94253E",
-    brightWhite: "#4F5E68",
-    brightYellow: "#803D1C",
-    cursor: "#2C363C",
-    cyan: "#3B8992",
-    foreground: "#2C363C",
-    green: "#4F6C31",
-    magenta: "#88507D",
-    red: "#A8334C",
-    white: "#2C363C",
-    yellow: "#944927"
-  },
-  dark: {
-    background: "#1C1917",
-    black: "#1C1917",
-    blue: "#6099C0",
-    brightBlack: "#403833",
-    brightBlue: "#61ABDA",
-    brightCyan: "#65B8C1",
-    brightGreen: "#8BAE68",
-    brightMagenta: "#CF86C1",
-    brightRed: "#E8838F",
-    brightWhite: "#888F94",
-    brightYellow: "#D68C67",
-    cursor: "#C4CACF",
-    cyan: "#66A5AD",
-    foreground: "#B4BDC3",
-    green: "#819B69",
-    magenta: "#B279A7",
-    red: "#DE6E7C",
-    white: "#B4BDC3",
-    yellow: "#B77E64"
-  }
+// ターミナルはライト/ダークに追従させず、常にダークで固定する。
+// 起動するエージェント（Claude Code 等）のテーマを外部から取得・指定できず、
+// xterm の背景色とエージェントが想定する明暗がズレると表示が崩れるのを防ぐ目的。
+// パネルの枠・タブ側は styles.css の --terminal-* で同様にダーク固定している。
+const terminalTheme: ITheme = {
+  background: "#1C1917",
+  black: "#1C1917",
+  blue: "#6099C0",
+  brightBlack: "#403833",
+  brightBlue: "#61ABDA",
+  brightCyan: "#65B8C1",
+  brightGreen: "#8BAE68",
+  brightMagenta: "#CF86C1",
+  brightRed: "#E8838F",
+  brightWhite: "#888F94",
+  brightYellow: "#D68C67",
+  cursor: "#C4CACF",
+  cyan: "#66A5AD",
+  foreground: "#B4BDC3",
+  green: "#819B69",
+  magenta: "#B279A7",
+  red: "#DE6E7C",
+  white: "#B4BDC3",
+  yellow: "#B77E64"
 };
 
 export interface WtermTerminalHandle {
@@ -96,9 +77,6 @@ export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>
     const socketRef = useRef<WebSocket | null>(null);
     const lastSizeRef = useRef<{ cols: number; rows: number } | null>(null);
     const [terminalReady, setTerminalReady] = useState(false);
-    const colorScheme = useSystemColorScheme();
-    const terminalTheme = terminalThemes[colorScheme];
-    const initialTerminalThemeRef = useRef(terminalTheme);
 
     const setStatus = useCallback(
       (status: TerminalStatus) => {
@@ -160,16 +138,37 @@ export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>
       const terminal = new XtermTerminal({
         cols: 100,
         cursorBlink: true,
-        fontFamily: "Menlo, Consolas, 'DejaVu Sans Mono', 'Courier New', monospace",
+        // Nerd Font を持つユーザーには効かせる（グリフ単位のフォールバックで、
+        // インストール済みの最初のフォントが使われる）。未所持なら Menlo 等に落ちる。
+        // 末尾寄りの Symbols Nerd Font Mono は、本文は通常等幅でもアイコン字形だけ補完する用途。
+        fontFamily:
+          "'JetBrainsMono Nerd Font', 'FiraCode Nerd Font', 'Hack Nerd Font', 'MesloLGS NF', " +
+          "'Symbols Nerd Font Mono', Menlo, Consolas, 'DejaVu Sans Mono', 'Courier New', monospace",
         fontSize: 14,
-        lineHeight: 1.2,
+        lineHeight: 1,
         rows: 30,
         scrollback: 1000,
-        theme: initialTerminalThemeRef.current
+        theme: terminalTheme
       });
       const fitAddon = new FitAddon();
       terminal.loadAddon(fitAddon);
       terminal.open(container);
+
+      // WebGL レンダラを使い、ブロック/ボックス文字をセル全体に充填して描画させる。
+      // DOM レンダラ（既定）はフォントのグリフ任せで、ASCII アート等に隙間が出るため。
+      // WebGL 非対応環境やコンテキストロス時は破棄して DOM レンダラへフォールバックする。
+      let webglAddon: WebglAddon | null = null;
+      try {
+        webglAddon = new WebglAddon();
+        webglAddon.onContextLoss(() => {
+          webglAddon?.dispose();
+          webglAddon = null;
+        });
+        terminal.loadAddon(webglAddon);
+      } catch {
+        webglAddon?.dispose();
+        webglAddon = null;
+      }
 
       const fit = () => {
         fitTerminal();
@@ -199,19 +198,13 @@ export const WtermTerminal = forwardRef<WtermTerminalHandle, WtermTerminalProps>
         binaryDisposable.dispose();
         resizeDisposable.dispose();
         resizeObserver.disconnect();
+        webglAddon?.dispose();
         fitAddon.dispose();
         terminal.dispose();
         fitAddonRef.current = null;
         terminalRef.current = null;
       };
     }, [fitTerminal, sendData]);
-
-    useEffect(() => {
-      const terminal = terminalRef.current;
-      if (terminal) {
-        terminal.options.theme = terminalTheme;
-      }
-    }, [terminalTheme]);
 
     useEffect(() => {
       if (!isActive) return undefined;
