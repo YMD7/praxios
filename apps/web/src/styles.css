@@ -32,6 +32,7 @@
   --color-sidebar-active: var(--sidebar-active);
   --color-warning: var(--warning);
   --color-terminal-background: var(--terminal-background);
+  --color-terminal-header: var(--terminal-header);
   --color-terminal-foreground: var(--terminal-foreground);
   --color-terminal-muted: var(--terminal-muted);
   --color-terminal-border: var(--terminal-border);
@@ -88,14 +89,23 @@
   --code-background: #f3f6fb;
   --code-foreground: #1f2937;
   --inline-code: #2f3f55;
-  --terminal-background: #eff0f2;
-  --terminal-foreground: #1f2937;
-  --terminal-muted: #607089;
-  --terminal-border: #b5c3d6;
-  --terminal-control: #eef3f8;
-  --terminal-control-hover: #e2e8f0;
-  --terminal-accent: #d9f2e6;
-  --terminal-accent-foreground: #1f6a4c;
+  /*
+   * ターミナルパネル（右ペイン）はライト/ダークに追従させず、常にダークで固定する。
+   * 起動するエージェント（Claude Code 等）のテーマを外部から取得・指定できないため、
+   * xterm の背景色とエージェントが想定する明暗がズレて表示が崩れるのを防ぐ目的。
+   * このため :root にダーク値を置き、:root.dark には敢えて再定義しない（xterm 側は WtermTerminal.tsx で固定）。
+   * 例外: --terminal-tab-active* は左ペイン（ContextPane）のトグル用でテーマ追従させる。
+   */
+  --terminal-background: #0d1110;
+  /* ヘッダー/トグルバー用。xterm キャンバス背景 #1c1917 より一段明るくして端末本体と区別する */
+  --terminal-header: #2a2623;
+  --terminal-foreground: #eef7f1;
+  --terminal-muted: #94a39b;
+  --terminal-border: #26322d;
+  --terminal-control: #17201c;
+  --terminal-control-hover: #202c26;
+  --terminal-accent: #173927;
+  --terminal-accent-foreground: #8de3af;
   --terminal-tab-active: #dce7f5;
   --terminal-tab-active-foreground: #172033;
   --radius: 0.5rem;
@@ -150,14 +160,7 @@
   --code-background: #0b0f0d;
   --code-foreground: #d8f3df;
   --inline-code: #c8d5ce;
-  --terminal-background: #0d1110;
-  --terminal-foreground: #eef7f1;
-  --terminal-muted: #94a39b;
-  --terminal-border: #26322d;
-  --terminal-control: #17201c;
-  --terminal-control-hover: #202c26;
-  --terminal-accent: #173927;
-  --terminal-accent-foreground: #8de3af;
+  /* --terminal-* は :root でダーク固定済みのため再定義しない。tab-active のみテーマ追従の例外 */
   --terminal-tab-active: #edf5ef;
   --terminal-tab-active-foreground: #101411;
   color-scheme: dark;
