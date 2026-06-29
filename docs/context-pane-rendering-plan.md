@@ -3,7 +3,7 @@
 ## 目的
 
 ナビゲーターが Task Context を読みやすく確認できるようにする。
-`context.md` は AI が読む正規コンテキストとして維持し、UI では Markdown を HTML として表示する。
+`context.md` は Agent が読む正規コンテキストとして維持し、UI では Markdown を HTML として表示する。
 
 ## 今回の実装範囲
 

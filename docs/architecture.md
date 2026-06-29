@@ -17,7 +17,7 @@ Source を ingest し、Context を更新する体験を中心にする。
 
 ## 全体像
 
-Praxios は、Task を中心に Source、Context、AI Terminal を接続する
+Praxios は、Task を中心に Source、Context、Agent を接続する
 Web アプリケーションである。
 
 主要レイヤー:
@@ -26,7 +26,7 @@ Web アプリケーションである。
 - Task Layer
 - Source Layer
 - Context Layer
-- AI Terminal / Worker Layer
+- Agent / Worker Layer
 - Integration Layer
 - Audit Layer
 
@@ -64,9 +64,9 @@ Task Workspace は左右分割とする。
 
 右ペイン:
 
-- AI Terminal
+- Agent
 
-Task Workspace は、ユーザーと AI が同じ前提を見ながら作業する場所である。
+Task Workspace は、ユーザーと Agent が同じ前提を見ながら作業する場所である。
 MVP ではダッシュボード化せず、Context と Sources に絞る。
 
 ### Source List
@@ -141,26 +141,26 @@ Context に含める代表情報:
 - 確定事項
 - 未確認事項
 - 変更履歴
-- 次に AI が確認すべきこと
+- 次に Agent が確認すべきこと
 - 根拠 Source
 
-Context は Source の丸写しではない。AI が Task 遂行に必要な形へ抽出・整理した
+Context は Source の丸写しではない。Agent が Task 遂行に必要な形へ抽出・整理した
 作業前提である。
 
 更新方針:
 
 - ユーザーが Task Workspace で直接回答した内容は Context に直接反映できる
-- AI がユーザーの明示指示で取得した Source は ingest 後に Context へ反映する
+- Agent がユーザーの明示指示で取得した Source は ingest 後に Context へ反映する
 - 将来、リスクの高い外部検知情報は Review / Approval を挟めるようにする
 
-## AI Terminal / Worker Layer
+## Agent / Worker Layer
 
-AI Terminal は、ユーザーが AI に指示する場所である。
+Agent は、ユーザーが作業を依頼し、タスクを進める場所である。
 
 Praxios は自前推論を前提にしない。ローカル Codex / Claude Code などを
 Hono WebSocket と node-pty 経由で起動し、ブラウザー上の xterm.js で表示する。
 
-AI が担うこと:
+Agent が担うこと:
 
 - ユーザー指示の実行
 - 必要な Source の探索
@@ -173,7 +173,7 @@ AI が担うこと:
 
 ユーザー: 「メールに返答があったので確認してコンテキストを更新して」
 
-AI:
+Agent:
 
 (1) メールスレッドを確認する
 
