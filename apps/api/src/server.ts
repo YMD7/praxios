@@ -1,5 +1,5 @@
 import { serve } from "@hono/node-server";
-import { PraxiosCore } from "@praxios/core";
+import { loadUserConfig, PraxiosCore } from "@praxios/core";
 import { WebSocketServer } from "ws";
 import { createApp } from "./app.js";
 import { handleTerminalConnection } from "./terminal.js";
@@ -25,7 +25,8 @@ server.on("upgrade", (request, socket, head) => {
 
   terminalWss.handleUpgrade(request, socket, head, (ws) => {
     handleTerminalConnection(ws, url, {
-      resolveTaskCwd: (taskId) => core.syncTaskWorkspace(taskId).path
+      resolveTaskCwd: (taskId) => core.syncTaskWorkspace(taskId).path,
+      resolveConfig: () => loadUserConfig({ workspaceRoot: core.config.workspaceRoot })
     });
   });
 });

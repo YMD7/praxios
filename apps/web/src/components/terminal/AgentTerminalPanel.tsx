@@ -1,8 +1,9 @@
 import { Circle } from "lucide-react";
-import { forwardRef, useImperativeHandle, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useConfig } from "@/lib/use-config";
 import { cn } from "@/lib/utils";
-import { agentOptions, type AgentId } from "./types";
+import { type AgentId } from "./types";
 import { WtermTerminal } from "./WtermTerminal";
 import type { WtermTerminalHandle } from "./WtermTerminal";
 
@@ -29,9 +30,17 @@ const statusLabels: Record<TerminalStatus, string> = {
 
 export const AgentTerminalPanel = forwardRef<AgentTerminalPanelHandle, AgentTerminalPanelProps>(
   function AgentTerminalPanel({ isActive, tabId = "home", taskId }, ref) {
-    const [agent, setAgent] = useState<AgentId>("codex");
+    const { config, loading, error } = useConfig();
+    const [agent, setAgent] = useState<AgentId | null>(null);
     const [status, setStatus] = useState<TerminalStatus>("idle");
     const terminalRef = useRef<WtermTerminalHandle | null>(null);
+
+    // 設定ロード後、未選択ならデフォルトエージェントを採用する。
+    useEffect(() => {
+      if (config && agent === null) {
+        setAgent(config.defaultAgent);
+      }
+    }, [config, agent]);
 
     useImperativeHandle(
       ref,
@@ -41,6 +50,8 @@ export const AgentTerminalPanel = forwardRef<AgentTerminalPanelHandle, AgentTerm
       }),
       []
     );
+
+    const agents = config?.agents ?? [];
 
     return (
       <section className="flex h-full min-h-0 flex-col bg-terminal-background text-terminal-foreground">
@@ -67,7 +78,7 @@ export const AgentTerminalPanel = forwardRef<AgentTerminalPanelHandle, AgentTerm
             {/* 左ペイン（ContextPane）のトグルと同一デザイン。右ペインは常時ダークのため、
                 テーマ追従トークンではなくダーク固定の --terminal-* で左のダーク配色を踏襲する。 */}
             <div className="inline-flex rounded-md border border-terminal-border bg-terminal-control p-0.5">
-              {agentOptions.map((option) => (
+              {agents.map((option) => (
                 <Button
                   className={cn(
                     "h-7 cursor-pointer rounded border px-2 text-xs",
@@ -93,14 +104,20 @@ export const AgentTerminalPanel = forwardRef<AgentTerminalPanelHandle, AgentTerm
         </div>
 
         <div className="min-h-0 flex-1">
-          <WtermTerminal
-            agent={agent}
-            isActive={isActive}
-            onStatusChange={setStatus}
-            ref={terminalRef}
-            tabId={tabId}
-            taskId={taskId}
-          />
+          {agent ? (
+            <WtermTerminal
+              agent={agent}
+              isActive={isActive}
+              onStatusChange={setStatus}
+              ref={terminalRef}
+              tabId={tabId}
+              taskId={taskId}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center px-4 text-center text-xs text-terminal-muted">
+              {error ? `設定の読み込みに失敗しました: ${error}` : loading ? "設定を読み込み中..." : "利用可能なエージェントがありません"}
+            </div>
+          )}
         </div>
       </section>
     );

@@ -561,6 +561,32 @@ code {
   color: var(--inline-code);
 }
 
+/* 起動コマンドを端末風スニペットとして表示する（先頭 $ プロンプト付き）。 */
+.commandSnippet {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 0;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--code-background);
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.commandSnippet-prompt {
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+  user-select: none;
+}
+
+.commandSnippet code {
+  color: var(--code-foreground);
+  white-space: pre;
+}
+
 @media (max-width: 900px) {
   .shell {
     grid-template-columns: 1fr;

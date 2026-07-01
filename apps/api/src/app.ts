@@ -1,6 +1,7 @@
 import {
   createTaskSchema,
   ingestSourceSchema,
+  loadUserConfig,
   PraxiosCore,
   PraxiosError,
   proposalStatuses,
@@ -11,7 +12,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { Context } from "hono";
 import { z, ZodError } from "zod";
-import { closeTerminalSessionsForTask, listTerminalAgents } from "./terminal.js";
+import { closeTerminalSessionsForTask } from "./terminal.js";
 
 const proposalStatusQuerySchema = z.enum(proposalStatuses).optional();
 const reviewBodySchema = z.object({
@@ -250,7 +251,8 @@ export function createApp(core = new PraxiosCore()) {
 
   app.get("/audit", (c) => c.json({ events: core.listAuditEvents() }));
 
-  app.get("/terminal/agents", (c) => c.json({ agents: listTerminalAgents() }));
+  // ローカル JSON から解決した実効設定（利用可能エージェント一覧・デフォルト等）を返す。
+  app.get("/config", (c) => c.json(loadUserConfig({ workspaceRoot: core.config.workspaceRoot })));
 
   return app;
 }

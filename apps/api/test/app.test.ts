@@ -212,6 +212,25 @@ describe("Praxios API validation", () => {
     expect(closeTerminalSessionsForTask(task.id)).toBe(0);
   });
 
+  it("serves the effective config from the local config file", async () => {
+    const configDir = path.join(tempDir, ".praxios");
+    fs.mkdirSync(configDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(configDir, "config.json"),
+      JSON.stringify({
+        agents: [{ id: "gemini", label: "Gemini", command: "gemini" }],
+        defaultAgent: "gemini"
+      })
+    );
+
+    const response = await app.request("/config");
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.defaultAgent).toBe("gemini");
+    expect(body.agents).toEqual([{ id: "gemini", label: "Gemini", command: "gemini" }]);
+  });
+
   it("returns 404 when deleting a missing task", async () => {
     const response = await app.request("/tasks/missing-task", {
       method: "DELETE"

@@ -1,23 +1,8 @@
-export type AgentId = "codex" | "claude";
+import type { AgentConfig, PraxiosUserConfig } from "@praxios/core";
 
-export interface AgentOption {
-  id: AgentId;
-  label: string;
-  command: string;
-  description: string;
-}
+// エージェント定義・デフォルトはローカル JSON 設定（`/config`）が単一ソース。
+// フロントは型のみを core から借り、実データは API から取得する。
+export type AgentId = string;
+export type AgentOption = AgentConfig;
 
-export const agentOptions: AgentOption[] = [
-  {
-    id: "codex",
-    label: "Codex",
-    command: "codex",
-    description: "OpenAI Codex CLI"
-  },
-  {
-    id: "claude",
-    label: "Claude Code",
-    command: "claude",
-    description: "Anthropic Claude Code CLI"
-  }
-];
+export type { AgentConfig, PraxiosUserConfig };

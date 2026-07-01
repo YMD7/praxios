@@ -3,6 +3,7 @@ import {
   HomeIcon,
   ListTodo,
   SearchCheck,
+  Settings as SettingsIcon,
   X
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -19,6 +20,7 @@ import type { AgentTerminalPanelHandle } from "@/components/terminal/AgentTermin
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Home } from "@/views/Home";
+import { Settings } from "@/views/Settings";
 import { SourceList } from "@/views/SourceList";
 import { SourceViewer } from "@/views/SourceViewer";
 import { TaskList } from "@/views/TaskList";
@@ -35,7 +37,8 @@ import { TaskWorkbenchPanel } from "./TaskWorkbenchPanel";
 const navigation = [
   { to: "/", label: "Home", icon: HomeIcon },
   { to: "/tasks", label: "Tasks", icon: ListTodo },
-  { to: "/sources", label: "Sources", icon: Database }
+  { to: "/sources", label: "Sources", icon: Database },
+  { to: "/settings", label: "Settings", icon: SettingsIcon }
 ];
 
 export function WorkbenchShell() {
@@ -317,6 +320,7 @@ function HomeTabPanel({ onTaskDeleted }: { onTaskDeleted: (taskId: string) => vo
         <Route path="/tasks" element={<TaskList onTaskDeleted={onTaskDeleted} />} />
         <Route path="/sources" element={<SourceList />} />
         <Route path="/sources/:sourceId" element={<SourceViewer />} />
+        <Route path="/settings" element={<Settings />} />
         <Route path="/tasks/:taskId" element={<Home />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

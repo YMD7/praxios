@@ -1,4 +1,12 @@
 export { createRuntimeConfig, findWorkspaceRoot } from "./config.js";
+export {
+  BUILTIN_AGENTS,
+  BUILTIN_DEFAULT_AGENT,
+  getProjectConfigPath,
+  getUserConfigPath,
+  loadUserConfig
+} from "./user-config.js";
+export type { AgentConfig, LoadUserConfigInput, PraxiosUserConfig } from "./user-config.js";
 export { openDatabase } from "./db/client.js";
 export {
   ConflictError,
