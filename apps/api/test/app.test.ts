@@ -212,6 +212,48 @@ describe("Praxios API validation", () => {
     expect(closeTerminalSessionsForTask(task.id)).toBe(0);
   });
 
+  it("serves the effective config with agent availability diagnostics", async () => {
+    const configDir = path.join(tempDir, ".praxios");
+    fs.mkdirSync(configDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(configDir, "config.json"),
+      JSON.stringify({
+        agents: [
+          { id: "real", label: "Real", command: "sh" },
+          { id: "bogus", label: "Bogus", command: "praxios-nonexistent-cmd-xyz" }
+        ],
+        defaultAgent: "bogus"
+      })
+    );
+
+    const response = await app.request("/config");
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    const real = body.agents.find((agent: { id: string }) => agent.id === "real");
+    const bogus = body.agents.find((agent: { id: string }) => agent.id === "bogus");
+    expect(real.available).toBe(true);
+    expect(bogus.available).toBe(false);
+    expect(bogus.unavailableReason).toContain("praxios-nonexistent-cmd-xyz");
+    // 既定 "bogus" が利用不可なので、利用可能な "real" にフォールバックする
+    expect(body.defaultAgent).toBe("real");
+  });
+
+  it("refuses a terminal connection for an agent whose command is unavailable", () => {
+    const socket = new TestTerminalSocket();
+    const url = new URL("http://localhost/terminal/ws?agent=bogus&tabId=home");
+
+    handleTerminalConnection(socket as unknown as WebSocket, url, {
+      resolveConfig: () => ({
+        agents: [{ id: "bogus", label: "Bogus", command: "praxios-nonexistent-cmd-xyz" }],
+        defaultAgent: "bogus"
+      })
+    });
+
+    expect(socket.sent.join("")).toContain("unavailable");
+    expect(socket.readyState).toBe(WebSocket.CLOSED);
+  });
+
   it("returns 404 when deleting a missing task", async () => {
     const response = await app.request("/tasks/missing-task", {
       method: "DELETE"

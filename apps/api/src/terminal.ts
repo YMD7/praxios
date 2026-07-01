@@ -1,21 +1,21 @@
+import {
+  diagnoseAgentCommand,
+  loadUserConfig,
+  type AgentConfig,
+  type PraxiosUserConfig
+} from "@praxios/core";
 import * as pty from "node-pty";
 import process from "node:process";
 import { WebSocket, type RawData } from "ws";
 
-type AgentId = "codex" | "claude";
-
-interface AgentDefinition {
-  id: AgentId;
-  label: string;
-  command: string;
-}
-
 export interface TerminalConnectionOptions {
   resolveTaskCwd?: (taskId: string) => string;
+  /** 実効設定の解決関数。未指定時は既定の探索パスから読み込む。 */
+  resolveConfig?: () => PraxiosUserConfig;
 }
 
 interface TerminalSession {
-  agent: AgentDefinition;
+  agent: AgentConfig;
   clients: Set<WebSocket>;
   cleanupTimer: NodeJS.Timeout | null;
   cwd: string;
@@ -28,19 +28,6 @@ interface TerminalSession {
   taskId: string | null;
 }
 
-const terminalAgents: Record<AgentId, AgentDefinition> = {
-  codex: {
-    id: "codex",
-    label: "Codex",
-    command: "codex"
-  },
-  claude: {
-    id: "claude",
-    label: "Claude Code",
-    command: "claude"
-  }
-};
-
 const resizePattern = /^\x1b\[RESIZE:(\d+);(\d+)\]$/;
 const closeCommand = "\x1b[TERMINAL:CLOSE]";
 const terminalSessions = new Map<string, TerminalSession>();
@@ -52,26 +39,34 @@ export interface TerminalSessionConfig {
   replayBufferBytes: number;
 }
 
-export function listTerminalAgents() {
-  return Object.values(terminalAgents);
-}
-
 export function handleTerminalConnection(
   ws: WebSocket,
   url: URL,
   options: TerminalConnectionOptions = {}
 ) {
+  const config = options.resolveConfig?.() ?? loadUserConfig();
   const agentParam = url.searchParams.get("agent");
   const tabId = normalizeSessionPart(url.searchParams.get("tabId") ?? "home");
   const taskId = url.searchParams.get("taskId");
 
-  if (!isAgentId(agentParam)) {
-    ws.send("\r\n\x1b[31mUnsupported agent. Use codex or claude.\x1b[0m\r\n");
+  const agent = findAgent(agentParam, config);
+  if (!agent) {
+    const available = config.agents.map((item) => item.id).join(", ");
+    ws.send(`\r\n\x1b[31mUnsupported agent. Available: ${available}.\x1b[0m\r\n`);
     ws.close(1008, "Unsupported agent");
     return;
   }
 
-  const agent = terminalAgents[agentParam];
+  // 起動コマンドの診断。UI 側でも非活性化するが、直接接続に対する最終防衛として拒否する。
+  const diagnostic = diagnoseAgentCommand(agent.command);
+  if (!diagnostic.available) {
+    ws.send(
+      `\r\n\x1b[31m${agent.label} is unavailable: ${diagnostic.reason ?? "command not found"}.\x1b[0m\r\n`
+    );
+    ws.close(1008, "Agent unavailable");
+    return;
+  }
+
   const cwd = resolveTerminalCwd(taskId, options);
   if (!cwd) {
     ws.send("\r\n\x1b[31mTask workspace could not be resolved.\x1b[0m\r\n");
@@ -133,7 +128,7 @@ export function handleTerminalConnection(
 
 function getOrCreateSession(
   key: string,
-  agent: AgentDefinition,
+  agent: AgentConfig,
   cwd: string,
   taskId: string | null
 ): TerminalSession {
@@ -297,8 +292,9 @@ function normalizeSessionPart(value: string): string {
   return value.replace(/[^a-zA-Z0-9:._-]/g, "_") || "home";
 }
 
-function isAgentId(value: string | null): value is AgentId {
-  return value === "codex" || value === "claude";
+function findAgent(value: string | null, config: PraxiosUserConfig): AgentConfig | null {
+  if (typeof value !== "string") return null;
+  return config.agents.find((agent) => agent.id === value) ?? null;
 }
 
 function normalizeMessage(message: RawData, isBinary: boolean): string {

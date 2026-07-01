@@ -1,5 +1,5 @@
 import { serve } from "@hono/node-server";
-import { PraxiosCore } from "@praxios/core";
+import { diagnoseConfig, loadUserConfig, PraxiosCore } from "@praxios/core";
 import { WebSocketServer } from "ws";
 import { createApp } from "./app.js";
 import { handleTerminalConnection } from "./terminal.js";
@@ -25,9 +25,20 @@ server.on("upgrade", (request, socket, head) => {
 
   terminalWss.handleUpgrade(request, socket, head, (ws) => {
     handleTerminalConnection(ws, url, {
-      resolveTaskCwd: (taskId) => core.syncTaskWorkspace(taskId).path
+      resolveTaskCwd: (taskId) => core.syncTaskWorkspace(taskId).path,
+      resolveConfig: () => loadUserConfig({ workspaceRoot: core.config.workspaceRoot })
     });
   });
 });
 
 console.log(`Praxios API listening on http://${hostname}:${port}`);
+
+// 起動時にエージェントの起動コマンドを診断し、利用不可のものを警告する。
+const diagnosed = diagnoseConfig(loadUserConfig({ workspaceRoot: core.config.workspaceRoot }));
+for (const agent of diagnosed.agents) {
+  if (agent.available) {
+    console.log(`Agent "${agent.id}" available: ${agent.resolvedPath ?? agent.command}`);
+  } else {
+    console.warn(`Agent "${agent.id}" unavailable: ${agent.unavailableReason ?? agent.command}`);
+  }
+}

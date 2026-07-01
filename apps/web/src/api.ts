@@ -1,5 +1,6 @@
 import type {
   ContextItem,
+  DiagnosedConfig,
   Proposal,
   Source,
   Task,
@@ -35,6 +36,9 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
+  async getConfig() {
+    return request<DiagnosedConfig>("/config");
+  },
   async listTasks() {
     return request<{ tasks: Task[] }>("/tasks");
   },

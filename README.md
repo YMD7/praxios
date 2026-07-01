@@ -165,3 +165,5 @@ pnpm build
 
 ブラウザー上の Agent terminal は、ローカルの `codex` または `claude` コマンドを
 `node-pty` 経由で起動します。これらの CLI が未導入の場合、terminal 起動時に失敗します。
+利用可能なエージェントとデフォルトはローカルの JSON 設定で変更・追加できます
+（詳細は [docs/configuration.md](docs/configuration.md)）。
