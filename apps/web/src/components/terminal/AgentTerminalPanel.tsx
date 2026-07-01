@@ -35,11 +35,18 @@ export const AgentTerminalPanel = forwardRef<AgentTerminalPanelHandle, AgentTerm
     const [status, setStatus] = useState<TerminalStatus>("idle");
     const terminalRef = useRef<WtermTerminalHandle | null>(null);
 
-    // 設定ロード後、未選択ならデフォルトエージェントを採用する。
+    // 設定ロード後、選択中エージェントが未設定・または利用不可なら、
+    // 利用可能なデフォルト（無ければ利用可能な先頭）へ切り替える。全て不可なら null。
     useEffect(() => {
-      if (config && agent === null) {
-        setAgent(config.defaultAgent);
-      }
+      if (!config) return;
+      const isAvailable = (id: AgentId | null) =>
+        config.agents.some((option) => option.id === id && option.available);
+      if (isAvailable(agent)) return;
+
+      const fallback = isAvailable(config.defaultAgent)
+        ? config.defaultAgent
+        : (config.agents.find((option) => option.available)?.id ?? null);
+      setAgent(fallback);
     }, [config, agent]);
 
     useImperativeHandle(
@@ -78,27 +85,39 @@ export const AgentTerminalPanel = forwardRef<AgentTerminalPanelHandle, AgentTerm
             {/* 左ペイン（ContextPane）のトグルと同一デザイン。右ペインは常時ダークのため、
                 テーマ追従トークンではなくダーク固定の --terminal-* で左のダーク配色を踏襲する。 */}
             <div className="inline-flex rounded-md border border-terminal-border bg-terminal-control p-0.5">
-              {agents.map((option) => (
-                <Button
-                  className={cn(
-                    "h-7 cursor-pointer rounded border px-2 text-xs",
-                    agent === option.id
-                      ? "border-terminal-foreground bg-transparent text-terminal-foreground hover:bg-transparent hover:text-terminal-foreground"
-                      : "border-transparent text-terminal-muted hover:bg-terminal-control-hover hover:text-terminal-foreground"
-                  )}
-                  key={option.id}
-                  onClick={() => {
-                    if (option.id === agent) return;
-                    terminalRef.current?.closeSession();
-                    setAgent(option.id);
-                  }}
-                  size="sm"
-                  type="button"
-                  variant="ghost"
-                >
-                  {option.label}
-                </Button>
-              ))}
+              {agents.map((option) => {
+                const disabled = !option.available;
+                const selected = agent === option.id;
+                return (
+                  <Button
+                    aria-disabled={disabled}
+                    className={cn(
+                      "h-7 rounded border px-2 text-xs",
+                      disabled
+                        ? "cursor-not-allowed border-transparent text-terminal-muted/50 hover:bg-transparent hover:text-terminal-muted/50"
+                        : selected
+                          ? "cursor-pointer border-terminal-foreground bg-transparent text-terminal-foreground hover:bg-transparent hover:text-terminal-foreground"
+                          : "cursor-pointer border-transparent text-terminal-muted hover:bg-terminal-control-hover hover:text-terminal-foreground"
+                    )}
+                    key={option.id}
+                    onClick={() => {
+                      if (disabled || selected) return;
+                      terminalRef.current?.closeSession();
+                      setAgent(option.id);
+                    }}
+                    size="sm"
+                    title={
+                      disabled
+                        ? `${option.label} は利用できません: ${option.unavailableReason ?? "コマンドが見つかりません"}`
+                        : undefined
+                    }
+                    type="button"
+                    variant="ghost"
+                  >
+                    {option.label}
+                  </Button>
+                );
+              })}
             </div>
           </div>
         </div>

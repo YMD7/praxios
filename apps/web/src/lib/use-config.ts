@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { PraxiosUserConfig } from "@praxios/core";
+import type { DiagnosedConfig } from "@praxios/core";
 import { api } from "@/api";
 
 export interface UseConfigResult {
-  config: PraxiosUserConfig | null;
+  config: DiagnosedConfig | null;
   loading: boolean;
   error: string | null;
   reload: () => void;

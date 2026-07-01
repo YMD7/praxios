@@ -1,5 +1,6 @@
 import {
   createTaskSchema,
+  diagnoseConfig,
   ingestSourceSchema,
   loadUserConfig,
   PraxiosCore,
@@ -251,8 +252,11 @@ export function createApp(core = new PraxiosCore()) {
 
   app.get("/audit", (c) => c.json({ events: core.listAuditEvents() }));
 
-  // ローカル JSON から解決した実効設定（利用可能エージェント一覧・デフォルト等）を返す。
-  app.get("/config", (c) => c.json(loadUserConfig({ workspaceRoot: core.config.workspaceRoot })));
+  // ローカル JSON から解決した実効設定を返す。各エージェントは起動コマンドの
+  // 診断結果（available / 理由）付き。診断はリクエスト毎に行うため設定更新も反映される。
+  app.get("/config", (c) =>
+    c.json(diagnoseConfig(loadUserConfig({ workspaceRoot: core.config.workspaceRoot })))
+  );
 
   return app;
 }

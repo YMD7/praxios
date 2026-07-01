@@ -44,9 +44,17 @@ export function Settings() {
                       <code>{agent.command}</code>
                     </div>
                     {agent.description && <p>{agent.description}</p>}
+                    {!agent.available && (
+                      <p className="agentUnavailableReason">
+                        {agent.unavailableReason ?? "コマンドが見つかりません"}
+                      </p>
+                    )}
                   </div>
                   <div className="rowActions">
                     {agent.id === config.defaultAgent && <span className="badge">Default</span>}
+                    {!agent.available && (
+                      <span className="badge badgeUnavailable">Unavailable</span>
+                    )}
                   </div>
                 </div>
               ))}

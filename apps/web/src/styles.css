@@ -587,6 +587,16 @@ code {
   white-space: pre;
 }
 
+/* 起動コマンドが解決できないエージェントの表示（設定画面）。 */
+.badgeUnavailable {
+  background: var(--error-background);
+  color: var(--error-foreground);
+}
+
+.listItem .agentUnavailableReason {
+  color: var(--error-foreground);
+}
+
 @media (max-width: 900px) {
   .shell {
     grid-template-columns: 1fr;

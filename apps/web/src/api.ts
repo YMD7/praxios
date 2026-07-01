@@ -1,6 +1,6 @@
 import type {
   ContextItem,
-  PraxiosUserConfig,
+  DiagnosedConfig,
   Proposal,
   Source,
   Task,
@@ -37,7 +37,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export const api = {
   async getConfig() {
-    return request<PraxiosUserConfig>("/config");
+    return request<DiagnosedConfig>("/config");
   },
   async listTasks() {
     return request<{ tasks: Task[] }>("/tasks");

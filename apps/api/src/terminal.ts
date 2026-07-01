@@ -1,4 +1,9 @@
-import { loadUserConfig, type AgentConfig, type PraxiosUserConfig } from "@praxios/core";
+import {
+  diagnoseAgentCommand,
+  loadUserConfig,
+  type AgentConfig,
+  type PraxiosUserConfig
+} from "@praxios/core";
 import * as pty from "node-pty";
 import process from "node:process";
 import { WebSocket, type RawData } from "ws";
@@ -49,6 +54,16 @@ export function handleTerminalConnection(
     const available = config.agents.map((item) => item.id).join(", ");
     ws.send(`\r\n\x1b[31mUnsupported agent. Available: ${available}.\x1b[0m\r\n`);
     ws.close(1008, "Unsupported agent");
+    return;
+  }
+
+  // 起動コマンドの診断。UI 側でも非活性化するが、直接接続に対する最終防衛として拒否する。
+  const diagnostic = diagnoseAgentCommand(agent.command);
+  if (!diagnostic.available) {
+    ws.send(
+      `\r\n\x1b[31m${agent.label} is unavailable: ${diagnostic.reason ?? "command not found"}.\x1b[0m\r\n`
+    );
+    ws.close(1008, "Agent unavailable");
     return;
   }
 

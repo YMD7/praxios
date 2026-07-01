@@ -7,6 +7,8 @@ export {
   loadUserConfig
 } from "./user-config.js";
 export type { AgentConfig, LoadUserConfigInput, PraxiosUserConfig } from "./user-config.js";
+export { diagnoseAgentCommand, diagnoseConfig } from "./agent-diagnostics.js";
+export type { AgentDiagnostic, DiagnosedAgent, DiagnosedConfig } from "./agent-diagnostics.js";
 export { openDatabase } from "./db/client.js";
 export {
   ConflictError,
